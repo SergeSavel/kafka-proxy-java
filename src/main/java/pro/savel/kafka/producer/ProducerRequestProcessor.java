@@ -23,7 +23,10 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.errors.*;
+import org.apache.kafka.common.errors.AuthenticationException;
+import org.apache.kafka.common.errors.AuthorizationException;
+import org.apache.kafka.common.errors.InvalidTopicException;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.HttpUtils;
@@ -114,7 +117,7 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processSend(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
+    private void processSend(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var request = (ProducerSendRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
         wrapper.touch();
@@ -131,8 +134,10 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
                 } else {
                     if (exception instanceof InvalidTopicException || exception instanceof UnknownTopicOrPartitionException)
                         HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
-                    else if (exception instanceof SaslAuthenticationException)
+                    else if (exception instanceof AuthenticationException)
                         HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
+                    else if (exception instanceof AuthorizationException)
+                        HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
                     else {
                         logger.error("Unable to produce message.", exception);
                         HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
@@ -146,13 +151,7 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var producer = wrapper.getProducer();
         var record = new ProducerRecord<>(request.getTopic(), request.getPartition(), request.getKey(), request.getValue());
         request.getHeaders().forEach((key, value) -> record.headers().add(key, value));
-        try {
-            producer.send(record, callback);
-        } catch (AuthenticationException e) {
-            throw new UnauthenticatedException("Unable to produce message.", e);
-        } catch (AuthorizationException e) {
-            throw new UnauthorizedException("Unable to produce message.", e);
-        }
+        producer.send(record, callback);
     }
 
     public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
