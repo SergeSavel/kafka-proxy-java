@@ -14,13 +14,17 @@
 
 package pro.savel.kafka.producer.responses;
 
-import pro.savel.kafka.common.contract.PartitionInfo;
+import lombok.Data;
 
-import java.util.ArrayList;
+import java.util.Collection;
 
-public class ProducerPartitionsResponse extends ArrayList<PartitionInfo> implements ProducerResponse {
+@Data
+public class ProducerPartitionsResponse implements ProducerResponse {
+    private String topic;
+    private Collection<ProducerPartitionsResponse.PartitionInfo> partitions;
 
-    public ProducerPartitionsResponse(int initialCapacity) {
-        super(initialCapacity);
+    @Data
+    public static class PartitionInfo {
+        private int partition;
     }
 }
