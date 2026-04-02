@@ -14,14 +14,25 @@
 
 package pro.savel.kafka.consumer.responses;
 
-import pro.savel.kafka.common.contract.PartitionInfo;
+import lombok.Data;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 
-public class ConsumerTopicsResponse extends HashMap<String, List<PartitionInfo>> implements ConsumerResponse {
+public class ConsumerTopicsResponse extends ArrayList<ConsumerTopicsResponse.TopicInfo> implements ConsumerResponse {
 
     public ConsumerTopicsResponse(int initialCapacity) {
         super(initialCapacity);
+    }
+
+    @Data
+    public static class PartitionInfo {
+        private int partition;
+    }
+
+    @Data
+    public static class TopicInfo {
+        private String topic;
+        private Collection<PartitionInfo> partitions;
     }
 }

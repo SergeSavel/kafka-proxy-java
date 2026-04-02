@@ -19,7 +19,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import pro.savel.kafka.common.CommonMapper;
-import pro.savel.kafka.common.contract.PartitionInfo;
 import pro.savel.kafka.consumer.responses.*;
 
 import java.util.ArrayList;
@@ -146,9 +145,15 @@ public class ConsumerResponseMapper {
             return null;
         var result = new ConsumerTopicsResponse(source.size());
         source.forEach((topic, partitionsSource) -> {
-            var partitions = new ArrayList<PartitionInfo>(partitionsSource.size());
-            partitionsSource.forEach(partitionSource -> partitions.add(CommonMapper.mapPartitionInfo(partitionSource)));
-            result.put(topic, partitions);
+            var topicInfo = new ConsumerTopicsResponse.TopicInfo();
+            topicInfo.setTopic(topic);
+            topicInfo.setPartitions(new ArrayList<>(partitionsSource.size()));
+            partitionsSource.forEach(partitionSource -> {
+                var partitionInfo = new ConsumerTopicsResponse.PartitionInfo();
+                partitionInfo.setPartition(partitionSource.partition());
+                topicInfo.getPartitions().add(partitionInfo);
+            });
+            result.add(topicInfo);
         });
         return result;
     }
