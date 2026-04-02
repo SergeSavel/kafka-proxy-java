@@ -14,10 +14,12 @@
 
 package pro.savel.kafka.consumer.responses;
 
-import java.util.HashMap;
-import java.util.List;
+import lombok.Data;
 
-public class ConsumerOffsetsResponse extends HashMap<String, List<PartitionOffset>> implements ConsumerResponse {
+import java.util.ArrayList;
+import java.util.Collection;
+
+public class ConsumerOffsetsResponse extends ArrayList<ConsumerOffsetsResponse.TopicOffsets> implements ConsumerResponse {
 
     public ConsumerOffsetsResponse() {
         super();
@@ -25,5 +27,20 @@ public class ConsumerOffsetsResponse extends HashMap<String, List<PartitionOffse
 
     public ConsumerOffsetsResponse(int size) {
         super(size);
+    }
+
+    public ConsumerOffsetsResponse(Collection<ConsumerOffsetsResponse.TopicOffsets> source) {
+        super(source);
+    }
+
+    @Data
+    public static class TopicOffsets {
+        private final String topic;
+        private final ArrayList<PartitionOffset> offsets;
+
+        public TopicOffsets(String topic) {
+            this.topic = topic;
+            offsets = new ArrayList<>();
+        }
     }
 }

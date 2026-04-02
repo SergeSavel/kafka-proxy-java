@@ -20,10 +20,7 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import pro.savel.kafka.consumer.responses.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConsumerResponseMapper {
 
@@ -137,12 +134,12 @@ public class ConsumerResponseMapper {
     public static ConsumerOffsetsResponse mapOffsetsResponse(Map<org.apache.kafka.common.TopicPartition, Long> source) {
         if (source == null)
             return null;
-        var result = new ConsumerOffsetsResponse();
+        var map = new HashMap<String, ConsumerOffsetsResponse.TopicOffsets>();
         source.forEach((topicPartition, offset) -> {
-            var offsets = result.computeIfAbsent(topicPartition.topic(), k -> new ArrayList<>());
-            offsets.add(new PartitionOffset(topicPartition.partition(), offset));
+            var topicOffsets = map.computeIfAbsent(topicPartition.topic(), ConsumerOffsetsResponse.TopicOffsets::new);
+            topicOffsets.getOffsets().add(new PartitionOffset(topicPartition.partition(), offset));
         });
-        return result;
+        return new ConsumerOffsetsResponse(map.values());
     }
 
     public static ConsumerTopicsResponse mapTopicsResponse(Map<String, List<org.apache.kafka.common.PartitionInfo>> source) {
