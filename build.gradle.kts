@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "pro.savel.kafka"
-version = "5.0.1"
+version = "5.0.2"
 
 java {
     toolchain {
