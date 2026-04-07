@@ -27,10 +27,7 @@ import org.slf4j.LoggerFactory;
 import pro.savel.kafka.admin.requests.*;
 import pro.savel.kafka.admin.responses.AdminConfigResponse;
 import pro.savel.kafka.admin.responses.AdminDescribeClusterResponse;
-import pro.savel.kafka.common.CommonMapper;
-import pro.savel.kafka.common.HttpUtils;
-import pro.savel.kafka.common.RequestBearer;
-import pro.savel.kafka.common.Utils;
+import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.NotFoundException;
 import pro.savel.kafka.common.exceptions.UnauthenticatedException;
@@ -100,7 +97,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
     private void processCreate(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminCreateRequest) requestBearer.request();
-        var wrapper = provider.createAdmin(request.getName(), request.getConfig(), request.getExpirationTimeout());
+        var owner = ctx.channel().attr(NettyAttributes.USERNAME).get();
+        var wrapper = provider.createAdmin(request.getName(), request.getConfig(), request.getExpirationTimeout(), owner);
         var response = AdminResponseMapper.mapCreateResponse(wrapper);
         var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.CREATED, response);
         ctx.writeAndFlush(responseBearer);

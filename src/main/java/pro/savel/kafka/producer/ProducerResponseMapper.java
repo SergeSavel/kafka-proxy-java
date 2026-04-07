@@ -39,6 +39,7 @@ public abstract class ProducerResponseMapper {
         var result = new ProducerListResponse.Producer();
         result.setId(source.getId());
         result.setName(source.getName());
+        result.setOwner(source.getOwner());
         result.setUsername(source.getUsername());
         result.setExpiresAt(source.getExpiresAt());
         return result;

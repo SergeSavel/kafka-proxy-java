@@ -30,6 +30,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.HttpUtils;
+import pro.savel.kafka.common.NettyAttributes;
 import pro.savel.kafka.common.RequestBearer;
 import pro.savel.kafka.common.Utils;
 import pro.savel.kafka.common.exceptions.BadRequestException;
@@ -96,7 +97,8 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private void processCreate(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ProducerCreateRequest) requestBearer.request();
-        var wrapper = provider.createProducer(request.getName(), request.getConfig(), request.getExpirationTimeout());
+        var owner = ctx.channel().attr(NettyAttributes.USERNAME).get();
+        var wrapper = provider.createProducer(request.getName(), request.getConfig(), request.getExpirationTimeout(), owner);
         var response = ProducerResponseMapper.mapCreateResponse(wrapper);
         var responseBearer = new ProducerResponseBearer(requestBearer, HttpResponseStatus.CREATED, response);
         ctx.writeAndFlush(responseBearer);

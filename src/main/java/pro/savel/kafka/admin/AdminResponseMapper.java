@@ -42,6 +42,7 @@ public class AdminResponseMapper {
         var result = new AdminListResponse.Admin();
         result.setId(source.getId());
         result.setName(source.getName());
+        result.setOwner(source.getOwner());
         result.setUsername(source.getUsername());
         result.setExpiresAt(source.getExpiresAt());
         return result;

@@ -38,6 +38,7 @@ public class ConsumerResponseMapper {
         var result = new ConsumerListResponse.Consumer();
         result.setId(source.getId());
         result.setName(source.getName());
+        result.setOwner(source.getOwner());
         result.setUsername(source.getUsername());
         result.setExpiresAt(source.getExpiresAt());
         return result;

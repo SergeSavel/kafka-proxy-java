@@ -25,14 +25,16 @@ public abstract class ClientWrapper implements AutoCloseable {
     private final String name;
     private final String username;
     private final int expirationTimeout;
+    private final String owner;
 
     private long expiresAt;
 
-    protected ClientWrapper(String id, String name, Properties config, int expirationTimeout) {
+    protected ClientWrapper(String id, String name, Properties config, int expirationTimeout, String owner) {
         this.id = id;
         this.name = name;
         this.username = getUsernameFromConfig(config);
         this.expirationTimeout = expirationTimeout;
+        this.owner = owner;
         touch();
     }
 

@@ -22,8 +22,8 @@ import java.util.Properties;
 
 public class ConsumerProvider extends ClientProvider<ConsumerWrapper> {
 
-    public ConsumerWrapper createConsumer(String name, Properties config, int expirationTimeout) {
-        var wrapper = new ConsumerWrapper(name, config, expirationTimeout);
+    public ConsumerWrapper createConsumer(String name, Properties config, int expirationTimeout, String owner) {
+        var wrapper = new ConsumerWrapper(name, config, expirationTimeout, owner);
         addItem(wrapper);
         return wrapper;
     }

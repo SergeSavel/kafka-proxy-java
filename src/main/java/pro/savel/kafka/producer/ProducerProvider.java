@@ -22,8 +22,8 @@ import java.util.Properties;
 
 public class ProducerProvider extends ClientProvider<ProducerWrapper> {
 
-    public ProducerWrapper createProducer(String name, Properties config, int expirationTimeout) {
-        var wrapper = new ProducerWrapper(name, config, expirationTimeout);
+    public ProducerWrapper createProducer(String name, Properties config, int expirationTimeout, String owner) {
+        var wrapper = new ProducerWrapper(name, config, expirationTimeout, owner);
         addItem(wrapper);
         return wrapper;
     }

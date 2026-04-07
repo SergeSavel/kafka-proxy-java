@@ -30,8 +30,8 @@ public class ConsumerWrapper extends ClientWrapper {
     private final KafkaConsumer<byte[], byte[]> consumer;
     private final String token = UUID.randomUUID().toString();
 
-    protected ConsumerWrapper(String name, Properties config, int expirationTimeout) {
-        super(UUID.randomUUID().toString(), name, config, expirationTimeout);
+    protected ConsumerWrapper(String name, Properties config, int expirationTimeout, String owner) {
+        super(UUID.randomUUID().toString(), name, config, expirationTimeout, owner);
         var deserializer = new ByteArrayDeserializer();
         consumer = new KafkaConsumer<>(config, deserializer, deserializer);
     }

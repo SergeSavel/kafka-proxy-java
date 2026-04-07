@@ -28,6 +28,7 @@ public class ConsumerListResponse extends ArrayList<ConsumerListResponse.Consume
     public static class Consumer {
         private String id;
         private String name;
+        private String owner;
         private String username;
         private long expiresAt;
     }

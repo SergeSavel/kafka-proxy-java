@@ -28,6 +28,7 @@ public class ProducerListResponse extends ArrayList<ProducerListResponse.Produce
     public static class Producer {
         private String id;
         private String name;
+        private String owner;
         private String username;
         private long expiresAt;
     }

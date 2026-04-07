@@ -30,14 +30,14 @@ public class ProducerWrapper extends ClientWrapper {
     private final KafkaProducer<byte[], byte[]> producer;
     private final String token = UUID.randomUUID().toString();
 
-    protected ProducerWrapper(String id, String name, Properties config, int expirationTimeout) {
-        super(id, name, config, expirationTimeout);
+    protected ProducerWrapper(String id, String name, Properties config, int expirationTimeout, String owner) {
+        super(id, name, config, expirationTimeout, owner);
         var serializer = new ByteArraySerializer();
         producer = new KafkaProducer<>(config, serializer, serializer);
     }
 
-    protected ProducerWrapper(String name, Properties config, int expirationTimeout) {
-        this(UUID.randomUUID().toString(), name, config, expirationTimeout);
+    protected ProducerWrapper(String name, Properties config, int expirationTimeout, String owner) {
+        this(UUID.randomUUID().toString(), name, config, expirationTimeout, owner);
     }
 
     @Override

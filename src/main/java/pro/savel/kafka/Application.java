@@ -35,6 +35,8 @@ public class Application
         var workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try (var initializer = new ServerInitializer())
         {
+            initializer.initialize();
+
             var bootstrap = new ServerBootstrap();
             bootstrap.option(ChannelOption.SO_BACKLOG, 1024);
             bootstrap.group(bossGroup, workerGroup)

@@ -30,6 +30,7 @@ import org.apache.kafka.common.errors.InvalidTopicException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.HttpUtils;
+import pro.savel.kafka.common.NettyAttributes;
 import pro.savel.kafka.common.RequestBearer;
 import pro.savel.kafka.common.Utils;
 import pro.savel.kafka.common.exceptions.BadRequestException;
@@ -115,7 +116,8 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private void processCreate(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerCreateRequest) requestBearer.request();
-        var wrapper = provider.createConsumer(request.getName(), request.getConfig(), request.getExpirationTimeout());
+        var owner = ctx.channel().attr(NettyAttributes.USERNAME).get();
+        var wrapper = provider.createConsumer(request.getName(), request.getConfig(), request.getExpirationTimeout(), owner);
         var response = ConsumerResponseMapper.mapCreateResponse(wrapper);
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.CREATED, response);
         ctx.writeAndFlush(responseBearer);

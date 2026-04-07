@@ -35,6 +35,8 @@ class ServerInitializer extends ChannelInitializer<SocketChannel> implements Aut
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final BasicAuthenticationHandler basicAuthenticationHandler = new BasicAuthenticationHandler(objectMapper);
+
     private final ProducerRequestDecoder producerRequestDecoder = new ProducerRequestDecoder(objectMapper);
     private final ConsumerRequestDecoder consumerRequestDecoder = new ConsumerRequestDecoder(objectMapper);
     private final AdminRequestDecoder adminRequestDecoder = new AdminRequestDecoder(objectMapper);
@@ -55,11 +57,17 @@ class ServerInitializer extends ChannelInitializer<SocketChannel> implements Aut
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
+    public void initialize() {
+        basicAuthenticationHandler.initialize();
+    }
+
     @Override
     protected void initChannel(SocketChannel channel) {
+
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpObjectAggregator(32 * 1024 * 1024));
+        pipeline.addLast(basicAuthenticationHandler);
         pipeline.addLast(producerRequestDecoder);
         pipeline.addLast(consumerRequestDecoder);
         pipeline.addLast(adminRequestDecoder);

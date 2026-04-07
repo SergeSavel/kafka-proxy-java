@@ -22,8 +22,8 @@ import java.util.Properties;
 
 public class AdminProvider extends ClientProvider<AdminWrapper> {
 
-    public AdminWrapper createAdmin(String name, Properties config, int expirationTimeout) {
-        var wrapper = new AdminWrapper(name, config, expirationTimeout);
+    public AdminWrapper createAdmin(String name, Properties config, int expirationTimeout, String owner) {
+        var wrapper = new AdminWrapper(name, config, expirationTimeout, owner);
         addItem(wrapper);
         return wrapper;
     }

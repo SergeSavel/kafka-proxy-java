@@ -28,6 +28,7 @@ public class AdminListResponse extends ArrayList<AdminListResponse.Admin> implem
     public static class Admin {
         private String id;
         private String name;
+        private String owner;
         private String username;
         private long expiresAt;
     }
