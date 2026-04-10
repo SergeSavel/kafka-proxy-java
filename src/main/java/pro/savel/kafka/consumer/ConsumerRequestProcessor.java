@@ -43,6 +43,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @ChannelHandler.Sharable
 public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter implements AutoCloseable {
@@ -332,6 +334,15 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         wrapper.touch();
         var consumer = wrapper.getConsumer();
         var topics = consumer.listTopics();
+        if (request.getPattern() != null) {
+            Pattern pattern;
+            try {
+                pattern = Pattern.compile(request.getPattern());
+            } catch (PatternSyntaxException e) {
+                throw new BadRequestException("Invalid pattern.", e);
+            }
+            topics.keySet().removeIf(topic -> !pattern.matcher(topic).matches());
+        }
         var response = ConsumerResponseMapper.mapTopicsResponse(topics);
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.OK, response);
         ctx.writeAndFlush(responseBearer);

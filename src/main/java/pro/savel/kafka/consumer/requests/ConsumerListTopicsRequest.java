@@ -20,4 +20,5 @@ import lombok.Data;
 public class ConsumerListTopicsRequest implements ConsumerRequest {
     private String consumerId;
     private String token;
+    private String pattern;
 }
