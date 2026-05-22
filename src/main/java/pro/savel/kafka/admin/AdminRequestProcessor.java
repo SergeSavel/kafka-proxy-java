@@ -197,6 +197,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
+//endregion
+
 //region Topics
 
     private void processListTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
@@ -355,6 +357,19 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
+    private void processSetTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminSetTopicConfigRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var configResource = new ConfigResource(ConfigResource.Type.TOPIC, request.getTopicName());
+        var configEntry = new ConfigEntry(request.getConfigName(), request.getNewValue());
+        var alterConfigOp = new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET);
+        Collection<AlterConfigOp> alterConfigOps = Collections.singleton(alterConfigOp);
+        var configs = Collections.singletonMap(configResource, alterConfigOps);
+        processIncrementalAlterConfigs(ctx, requestBearer, admin, configs);
+    }
+
     private void processCreateTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var request = (AdminCreateTopicRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
@@ -386,19 +401,6 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });
-    }
-
-    private void processSetTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
-        var request = (AdminSetTopicConfigRequest) requestBearer.request();
-        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
-        wrapper.touch();
-        var admin = wrapper.getAdmin();
-        var configResource = new ConfigResource(ConfigResource.Type.TOPIC, request.getTopicName());
-        var configEntry = new ConfigEntry(request.getConfigName(), request.getNewValue());
-        var alterConfigOp = new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET);
-        Collection<AlterConfigOp> alterConfigOps = Collections.singleton(alterConfigOp);
-        var configs = Collections.singletonMap(configResource, alterConfigOps);
-        processIncrementalAlterConfigs(ctx, requestBearer, admin, configs);
     }
 
 //endregion
