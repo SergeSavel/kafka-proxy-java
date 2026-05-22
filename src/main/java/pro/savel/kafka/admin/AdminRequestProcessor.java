@@ -81,13 +81,48 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         provider.close();
     }
 
-    private static void processDescribeClusterError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
-        if (error instanceof SaslAuthenticationException)
-            HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-        else {
-            logger.error("Unable to get cluster description.", error);
-            HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-        }
+    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
+        var requestClass = requestBearer.request().getClass();
+        if (requestClass == AdminDescribeTopicRequest.class)
+            processDescribeTopic(ctx, requestBearer);
+        else if (requestClass == AdminCreateTopicRequest.class)
+            processCreateTopic(ctx, requestBearer);
+        else if (requestClass == AdminDeleteTopicRequest.class)
+            processDeleteTopic(ctx, requestBearer);
+        else if (requestClass == AdminListTopicsRequest.class)
+            processListTopics(ctx, requestBearer);
+        else if (requestClass == AdminDescribeTopicConfigsRequest.class)
+            processDescribeTopicConfigs(ctx, requestBearer);
+        else if (requestClass == AdminDescribeBrokerConfigsRequest.class)
+            processDescribeBrokerConfigs(ctx, requestBearer);
+        else if (requestClass == AdminDescribeClusterRequest.class)
+            processDescribeCluster(ctx, requestBearer);
+        else if (requestClass == AdminCreateRequest.class)
+            processCreate(ctx, requestBearer);
+        else if (requestClass == AdminRemoveRequest.class)
+            processRemove(ctx, requestBearer);
+        else if (requestClass == AdminTouchRequest.class)
+            processTouch(ctx, requestBearer);
+        else if (requestClass == AdminListRequest.class)
+            processList(ctx, requestBearer);
+        else if (requestClass == AdminSetTopicConfigRequest.class)
+            processSetTopicConfig(ctx, requestBearer);
+        else if (requestClass == AdminDeleteTopicConfigRequest.class)
+            processDeleteTopicConfig(ctx, requestBearer);
+        else if (requestClass == AdminDescribeUserScramCredentialsRequest.class)
+            processDescribeUserScramCredentials(ctx, requestBearer);
+        else if (requestClass == AdminUpsertUserScramCredentialsRequest.class)
+            processUpsertUserScramCredentials(ctx, requestBearer);
+        else if (requestClass == AdminDeleteUserScramCredentialsRequest.class)
+            processDeleteUserScramCredentials(ctx, requestBearer);
+        else if (requestClass == AdminDescribeAclsRequest.class)
+            processDescribeAcls(ctx, requestBearer);
+        else if (requestClass == AdminCreateAclsRequest.class)
+            processCreateAcls(ctx, requestBearer);
+        else if (requestClass == AdminDeleteAclsRequest.class)
+            processDeleteAcls(ctx, requestBearer);
+        else
+            throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
 
 //region Management
@@ -174,27 +209,13 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private static void processIncrementalAlterConfigs(ChannelHandlerContext ctx, RequestBearer requestBearer, Admin admin, Map<ConfigResource, Collection<AlterConfigOp>> configs) {
-        var alterConfigsResult = admin.incrementalAlterConfigs(configs);
-        alterConfigsResult.all().whenComplete((ignore, error) -> {
-            if (error == null) {
-                var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, null);
-                ctx.writeAndFlush(responseBearer);
-            } else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof TopicAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnknownTopicOrPartitionException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof InvalidRequestException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof InvalidConfigurationException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
-                logger.error("Unable to alter topic config.", error);
-                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            }
-        });
+    private static void processDescribeClusterError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
+        if (error instanceof SaslAuthenticationException)
+            HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+        else {
+            logger.error("Unable to get cluster description.", error);
+            HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+        }
     }
 
 //endregion
@@ -241,71 +262,37 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private static void processAlterUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer, Admin admin, UserScramCredentialAlteration alteration) {
-        var alterationResult = admin.alterUserScramCredentials(Collections.singletonList(alteration));
-        alterationResult.all().whenComplete((ignore, error) -> {
+    private void processCreateTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminCreateTopicRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var newTopic = new NewTopic(request.getTopicName(), Optional.ofNullable(request.getNumPartitions()), Optional.ofNullable(request.getReplicationFactor()));
+        var createResult = admin.createTopics(Collections.singleton(newTopic));
+        createResult.all().whenComplete((topics, error) -> {
             if (error == null) {
-                var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, null);
-                ctx.writeAndFlush(responseBearer);
-            } else if (error instanceof NotControllerException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnsupportedByAuthenticationException)
-                HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnsupportedSaslMechanismException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnacceptableCredentialException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
-                logger.error("Unable to upsert user SCRAM credentials.", error);
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            } else {
+                logger.error("Unable to create topic.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });
     }
 
-    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
-        var requestClass = requestBearer.request().getClass();
-        if (requestClass == AdminDescribeTopicRequest.class)
-            processDescribeTopic(ctx, requestBearer);
-        else if (requestClass == AdminCreateTopicRequest.class)
-            processCreateTopic(ctx, requestBearer);
-        else if (requestClass == AdminDeleteTopicRequest.class)
-            processDeleteTopic(ctx, requestBearer);
-        else if (requestClass == AdminListTopicsRequest.class)
-            processListTopics(ctx, requestBearer);
-        else if (requestClass == AdminDescribeTopicConfigsRequest.class)
-            processDescribeTopicConfigs(ctx, requestBearer);
-        else if (requestClass == AdminDescribeBrokerConfigsRequest.class)
-            processDescribeBrokerConfigs(ctx, requestBearer);
-        else if (requestClass == AdminDescribeClusterRequest.class)
-            processDescribeCluster(ctx, requestBearer);
-        else if (requestClass == AdminCreateRequest.class)
-            processCreate(ctx, requestBearer);
-        else if (requestClass == AdminRemoveRequest.class)
-            processRemove(ctx, requestBearer);
-        else if (requestClass == AdminTouchRequest.class)
-            processTouch(ctx, requestBearer);
-        else if (requestClass == AdminListRequest.class)
-            processList(ctx, requestBearer);
-        else if (requestClass == AdminSetTopicConfigRequest.class)
-            processSetTopicConfig(ctx, requestBearer);
-        else if (requestClass == AdminDeleteTopicConfigRequest.class)
-            processDeleteTopicConfig(ctx, requestBearer);
-        else if (requestClass == AdminDescribeUserScramCredentialsRequest.class)
-            processDescribeUserScramCredentials(ctx, requestBearer);
-        else if (requestClass == AdminUpsertUserScramCredentialsRequest.class)
-            processUpsertUserScramCredentials(ctx, requestBearer);
-        else if (requestClass == AdminDeleteUserScramCredentialsRequest.class)
-            processDeleteUserScramCredentials(ctx, requestBearer);
-        else if (requestClass == AdminDescribeAclsRequest.class)
-            processDescribeAcls(ctx, requestBearer);
-        else if (requestClass == AdminCreateAclsRequest.class)
-            processCreateAcls(ctx, requestBearer);
-        else if (requestClass == AdminDeleteAclsRequest.class)
-            processDeleteAcls(ctx, requestBearer);
-        else
-            throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
+    private void processDeleteTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteTopicRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var deleteResult = admin.deleteTopics(Collections.singleton(request.getTopicName()));
+        deleteResult.all().whenComplete((topics, error) -> {
+            if (error == null) {
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            } else {
+                logger.error("Unable to delete topic.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
     }
 
 //endregion
@@ -370,34 +357,37 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         processIncrementalAlterConfigs(ctx, requestBearer, admin, configs);
     }
 
-    private void processCreateTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
-        var request = (AdminCreateTopicRequest) requestBearer.request();
+    private void processDeleteTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteTopicConfigRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
         var admin = wrapper.getAdmin();
-        var newTopic = new NewTopic(request.getTopicName(), Optional.ofNullable(request.getNumPartitions()), Optional.ofNullable(request.getReplicationFactor()));
-        var createResult = admin.createTopics(Collections.singleton(newTopic));
-        createResult.all().whenComplete((topics, error) -> {
-            if (error == null) {
-                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            } else {
-                logger.error("Unable to create topic.", error);
-                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            }
-        });
+        var configResource = new ConfigResource(ConfigResource.Type.TOPIC, request.getTopicName());
+        var configEntry = new ConfigEntry(request.getConfigName(), null);
+        var alterConfigOp = new AlterConfigOp(configEntry, AlterConfigOp.OpType.DELETE);
+        Collection<AlterConfigOp> alterConfigOps = Collections.singleton(alterConfigOp);
+        var configs = Collections.singletonMap(configResource, alterConfigOps);
+        processIncrementalAlterConfigs(ctx, requestBearer, admin, configs);
     }
 
-    private void processDeleteTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
-        var request = (AdminDeleteTopicRequest) requestBearer.request();
-        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
-        wrapper.touch();
-        var admin = wrapper.getAdmin();
-        var deleteResult = admin.deleteTopics(Collections.singleton(request.getTopicName()));
-        deleteResult.all().whenComplete((topics, error) -> {
+    private static void processIncrementalAlterConfigs(ChannelHandlerContext ctx, RequestBearer requestBearer, Admin admin, Map<ConfigResource, Collection<AlterConfigOp>> configs) {
+        var alterConfigsResult = admin.incrementalAlterConfigs(configs);
+        alterConfigsResult.all().whenComplete((ignore, error) -> {
             if (error == null) {
-                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            } else {
-                logger.error("Unable to delete topic.", error);
+                var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, null);
+                ctx.writeAndFlush(responseBearer);
+            } else if (error instanceof ClusterAuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof TopicAuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof UnknownTopicOrPartitionException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof InvalidRequestException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof InvalidConfigurationException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to alter topic config.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });
@@ -450,17 +440,27 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         processAlterUserScramCredentials(ctx, requestBearer, admin, alteration);
     }
 
-    private void processDeleteTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
-        var request = (AdminDeleteTopicConfigRequest) requestBearer.request();
-        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
-        wrapper.touch();
-        var admin = wrapper.getAdmin();
-        var configResource = new ConfigResource(ConfigResource.Type.TOPIC, request.getTopicName());
-        var configEntry = new ConfigEntry(request.getConfigName(), null);
-        var alterConfigOp = new AlterConfigOp(configEntry, AlterConfigOp.OpType.DELETE);
-        Collection<AlterConfigOp> alterConfigOps = Collections.singleton(alterConfigOp);
-        var configs = Collections.singletonMap(configResource, alterConfigOps);
-        processIncrementalAlterConfigs(ctx, requestBearer, admin, configs);
+    private static void processAlterUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer, Admin admin, UserScramCredentialAlteration alteration) {
+        var alterationResult = admin.alterUserScramCredentials(Collections.singletonList(alteration));
+        alterationResult.all().whenComplete((ignore, error) -> {
+            if (error == null) {
+                var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, null);
+                ctx.writeAndFlush(responseBearer);
+            } else if (error instanceof NotControllerException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof ClusterAuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof UnsupportedByAuthenticationException)
+                HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof UnsupportedSaslMechanismException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof UnacceptableCredentialException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to upsert user SCRAM credentials.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
     }
 
 //endregion
