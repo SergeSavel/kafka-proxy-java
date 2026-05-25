@@ -85,6 +85,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
             case "/describe-acls" -> decodeDescribeAcls(ctx, httpRequest);
             case "/create-acls" -> decodeCreateAcls(ctx, httpRequest);
             case "/delete-acls" -> decodeDeleteAcls(ctx, httpRequest);
+            case "/create-partitions" -> decodeCreatePartitions(ctx, httpRequest);
             case "" -> decodeList(ctx, httpRequest);
             default -> HttpUtils.writeNotFoundAndClose(ctx, httpRequest.protocolVersion());
         }
@@ -246,6 +247,14 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
         var request = new AdminListRequest();
         var bearer = new RequestBearer(httpRequest, request);
         ctx.fireChannelRead(bearer);
+    }
+
+    private void decodeCreatePartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminCreatePartitionsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
     }
 
     private <T extends AdminRequest> void decodeJsonRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest, Class<T> clazz) throws BadRequestException {

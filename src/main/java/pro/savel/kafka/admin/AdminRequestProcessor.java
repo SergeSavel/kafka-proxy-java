@@ -20,6 +20,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.*;
 import org.slf4j.Logger;
@@ -121,6 +122,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             processCreateAcls(ctx, requestBearer);
         else if (requestClass == AdminDeleteAclsRequest.class)
             processDeleteAcls(ctx, requestBearer);
+        else if (requestClass == AdminCreatePartitionsRequest.class)
+            processCreatePartitions(ctx, requestBearer);
         else
             throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
@@ -290,6 +293,37 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
             } else {
                 logger.error("Unable to delete topic.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processCreatePartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminCreatePartitionsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var newPartitions = NewPartitions.increaseTo(request.getIncreaseTo());
+        var createResult = admin.createPartitions(Collections.singletonMap(request.getTopicName(), newPartitions));
+        createResult.all().whenComplete((topics, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof AuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error.getCause() instanceof AuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getCause().getMessage());
+            else if (error instanceof TimeoutException)
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof ReassignmentInProgressException)
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof BrokerNotAvailableException)
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof InvalidReplicationFactorException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof KafkaException)
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to create partitions.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });
