@@ -22,8 +22,7 @@ import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.ResourcePattern;
 import pro.savel.kafka.admin.data.AdminAclBinding;
 import pro.savel.kafka.admin.responses.*;
-import pro.savel.kafka.common.CommonMapper;
-import pro.savel.kafka.common.contract.PartitionInfo;
+import pro.savel.kafka.common.CommonResponseMapper;
 
 import java.util.*;
 
@@ -92,15 +91,7 @@ public class AdminResponseMapper {
         result.setName(source.name());
         result.setInternal(source.isInternal());
         result.setAuthorizedOperations(mapAclOperations(source.authorizedOperations()));
-        result.setPartitions(mapPartitions(source.partitions()));
-        return result;
-    }
-
-    private static ArrayList<PartitionInfo> mapPartitions(Collection<org.apache.kafka.common.TopicPartitionInfo> source) {
-        if (source == null)
-            return null;
-        var result = new ArrayList<PartitionInfo>(source.size());
-        source.forEach(partitionInfoSource -> result.add(CommonMapper.mapTopicPartitionInfo(partitionInfoSource)));
+        result.setPartitions(CommonResponseMapper.mapPartitionInfos(source.partitions()));
         return result;
     }
 

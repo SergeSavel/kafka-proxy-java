@@ -16,17 +16,18 @@ package pro.savel.kafka.common;
 
 import pro.savel.kafka.common.contract.Node;
 import pro.savel.kafka.common.contract.PartitionInfo;
+import pro.savel.kafka.common.contract.TopicPartition;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
-public abstract class CommonMapper {
+public abstract class CommonResponseMapper {
 
     public static ArrayList<Node> mapNodes(Collection<org.apache.kafka.common.Node> source) {
         if (source == null)
             return null;
         var result = new ArrayList<Node>(source.size());
-        source.forEach(nodeSource -> result.add(CommonMapper.mapNode(nodeSource)));
+        source.forEach(nodeSource -> result.add(CommonResponseMapper.mapNode(nodeSource)));
         return result;
     }
 
@@ -41,13 +42,21 @@ public abstract class CommonMapper {
         return result;
     }
 
-    public static pro.savel.kafka.common.contract.TopicPartition mapTopicPartition(org.apache.kafka.common.TopicPartition source) {
+    public static TopicPartition mapTopicPartition(org.apache.kafka.common.TopicPartition source) {
         if (source == null)
             return null;
         return new pro.savel.kafka.common.contract.TopicPartition(source.topic(), source.partition());
     }
 
-    public static PartitionInfo mapTopicPartitionInfo(org.apache.kafka.common.TopicPartitionInfo source) {
+    public static Collection<PartitionInfo> mapPartitionInfos(Collection<org.apache.kafka.common.TopicPartitionInfo> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<PartitionInfo>(source.size());
+        source.forEach(partition -> result.add(mapPartitionInfo(partition)));
+        return result;
+    }
+
+    public static PartitionInfo mapPartitionInfo(org.apache.kafka.common.TopicPartitionInfo source) {
         if (source == null)
             return null;
         var result = new PartitionInfo();

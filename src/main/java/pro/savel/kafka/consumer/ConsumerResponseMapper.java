@@ -22,7 +22,7 @@ import pro.savel.kafka.consumer.responses.*;
 
 import java.util.*;
 
-import static pro.savel.kafka.common.CommonMapper.mapTopicPartition;
+import static pro.savel.kafka.common.CommonResponseMapper.mapTopicPartition;
 
 public class ConsumerResponseMapper {
 

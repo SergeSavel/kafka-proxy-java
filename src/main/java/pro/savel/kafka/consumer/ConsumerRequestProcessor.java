@@ -29,10 +29,7 @@ import org.apache.kafka.common.errors.AuthorizationException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.savel.kafka.common.HttpUtils;
-import pro.savel.kafka.common.NettyAttributes;
-import pro.savel.kafka.common.RequestBearer;
-import pro.savel.kafka.common.Utils;
+import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.NotFoundException;
 import pro.savel.kafka.common.exceptions.UnauthenticatedException;
@@ -40,8 +37,6 @@ import pro.savel.kafka.common.exceptions.UnauthorizedException;
 import pro.savel.kafka.consumer.requests.*;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -52,20 +47,6 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
     private static final Logger logger = LoggerFactory.getLogger(ConsumerRequestProcessor.class);
 
     private final ConsumerProvider provider = new ConsumerProvider();
-
-    private static Collection<TopicPartition> mapAssignment(Collection<pro.savel.kafka.common.contract.TopicPartition> source) {
-        if (source == null)
-            return null;
-        var result = new ArrayList<TopicPartition>(source.size());
-        source.forEach(partition -> result.add(mapTopicPartition(partition)));
-        return result;
-    }
-
-    private static TopicPartition mapTopicPartition(pro.savel.kafka.common.contract.TopicPartition source) {
-        if (source == null)
-            return null;
-        return new TopicPartition(source.topic(), source.partition());
-    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -177,7 +158,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
-        var assignment = mapAssignment(request.getPartitions());
+        var assignment = CommonRequestMapper.mapPartitions(request.getPartitions());
         try {
             consumer.assign(assignment);
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -309,7 +290,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
-        var partitions = mapAssignment(request.getPartitions());
+        var partitions = CommonRequestMapper.mapPartitions(request.getPartitions());
         var offsets = consumer.beginningOffsets(partitions);
         var response = ConsumerResponseMapper.mapOffsetsResponse(offsets);
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.OK, response);
@@ -321,7 +302,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
-        var partitions = mapAssignment(request.getPartitions());
+        var partitions = CommonRequestMapper.mapPartitions(request.getPartitions());
         var offsets = consumer.endOffsets(partitions);
         var response = ConsumerResponseMapper.mapOffsetsResponse(offsets);
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.OK, response);

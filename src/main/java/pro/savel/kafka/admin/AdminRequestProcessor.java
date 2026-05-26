@@ -178,7 +178,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var errorCounter = new AtomicInteger(1);
         describeResult.nodes().whenComplete((nodesSource, error) -> {
             if (error == null) {
-                response.setNodes(CommonMapper.mapNodes(nodesSource));
+                response.setNodes(CommonResponseMapper.mapNodes(nodesSource));
                 if (successCounter.decrementAndGet() == 0)
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (errorCounter.decrementAndGet() == 0) {
@@ -196,7 +196,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
         describeResult.controller().whenComplete((controllerSource, error) -> {
             if (error == null) {
-                response.setController(CommonMapper.mapNode(controllerSource));
+                response.setController(CommonResponseMapper.mapNode(controllerSource));
                 if (successCounter.decrementAndGet() == 0)
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (errorCounter.decrementAndGet() == 0) {
@@ -570,7 +570,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
         var admin = wrapper.getAdmin();
-        var partitions = AdminRequestMapper.mapPartitions(request.getPartitions());
+        var partitions = CommonRequestMapper.mapPartitions(request.getPartitions());
         var describeResult = admin.describeProducers(partitions);
         describeResult.all().whenComplete((producerStates, error) -> {
             if (error == null) {
