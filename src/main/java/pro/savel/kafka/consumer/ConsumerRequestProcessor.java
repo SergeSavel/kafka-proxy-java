@@ -53,7 +53,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private final ConsumerProvider provider = new ConsumerProvider();
 
-    private static Collection<TopicPartition> mapAssignment(Collection<pro.savel.kafka.consumer.requests.TopicPartition> source) {
+    private static Collection<TopicPartition> mapAssignment(Collection<pro.savel.kafka.common.contract.TopicPartition> source) {
         if (source == null)
             return null;
         var result = new ArrayList<TopicPartition>(source.size());
@@ -61,7 +61,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         return result;
     }
 
-    private static TopicPartition mapTopicPartition(pro.savel.kafka.consumer.requests.TopicPartition source) {
+    private static TopicPartition mapTopicPartition(pro.savel.kafka.common.contract.TopicPartition source) {
         if (source == null)
             return null;
         return new TopicPartition(source.topic(), source.partition());

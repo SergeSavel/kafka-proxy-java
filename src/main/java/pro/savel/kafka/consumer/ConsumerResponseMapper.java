@@ -18,6 +18,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
+import pro.savel.kafka.common.contract.TopicPartition;
 import pro.savel.kafka.consumer.responses.*;
 
 import java.util.*;

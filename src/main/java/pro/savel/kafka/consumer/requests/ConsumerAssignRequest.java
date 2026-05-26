@@ -15,6 +15,7 @@
 package pro.savel.kafka.consumer.requests;
 
 import lombok.Data;
+import pro.savel.kafka.common.contract.TopicPartition;
 
 import java.util.Collection;
 

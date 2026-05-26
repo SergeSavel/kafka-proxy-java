@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pro.savel.kafka.consumer.responses;
+package pro.savel.kafka.common.contract;
 
 public record TopicPartition(String topic, int partition) {
 }
