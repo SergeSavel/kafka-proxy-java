@@ -15,7 +15,7 @@
 package pro.savel.kafka.admin.responses;
 
 import lombok.Data;
-import pro.savel.kafka.common.contract.TopicPartitionInfo;
+import pro.savel.kafka.common.contract.PartitionInfo;
 
 import java.util.Collection;
 
@@ -25,5 +25,5 @@ public class AdminDescribeTopicResponse implements AdminResponse {
     private String name;
     private boolean isInternal;
     private Collection<String> authorizedOperations;
-    private Collection<TopicPartitionInfo> partitions;
+    private Collection<PartitionInfo> partitions;
 }

@@ -19,7 +19,7 @@ import lombok.Data;
 import java.util.Collection;
 
 @Data
-public class TopicPartitionInfo {
+public class PartitionInfo {
     private int partition;
     private Node leader;
     private Collection<Node> replicas;

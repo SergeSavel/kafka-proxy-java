@@ -15,7 +15,7 @@
 package pro.savel.kafka.common;
 
 import pro.savel.kafka.common.contract.Node;
-import pro.savel.kafka.common.contract.TopicPartitionInfo;
+import pro.savel.kafka.common.contract.PartitionInfo;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,10 +41,10 @@ public abstract class CommonMapper {
         return result;
     }
 
-    public static TopicPartitionInfo mapTopicPartitionInfo(org.apache.kafka.common.TopicPartitionInfo source) {
+    public static PartitionInfo mapTopicPartitionInfo(org.apache.kafka.common.TopicPartitionInfo source) {
         if (source == null)
             return null;
-        var result = new TopicPartitionInfo();
+        var result = new PartitionInfo();
         result.setPartition(source.partition());
         result.setLeader(mapNode(source.leader()));
         result.setReplicas(mapNodes(source.replicas()));

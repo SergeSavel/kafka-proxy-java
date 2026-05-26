@@ -22,7 +22,7 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import pro.savel.kafka.admin.data.AdminAclBinding;
 import pro.savel.kafka.admin.responses.*;
 import pro.savel.kafka.common.CommonMapper;
-import pro.savel.kafka.common.contract.TopicPartitionInfo;
+import pro.savel.kafka.common.contract.PartitionInfo;
 
 import java.util.*;
 
@@ -95,10 +95,10 @@ public class AdminResponseMapper {
         return result;
     }
 
-    private static ArrayList<TopicPartitionInfo> mapPartitions(Collection<org.apache.kafka.common.TopicPartitionInfo> source) {
+    private static ArrayList<PartitionInfo> mapPartitions(Collection<org.apache.kafka.common.TopicPartitionInfo> source) {
         if (source == null)
             return null;
-        var result = new ArrayList<TopicPartitionInfo>(source.size());
+        var result = new ArrayList<PartitionInfo>(source.size());
         source.forEach(partitionInfoSource -> result.add(CommonMapper.mapTopicPartitionInfo(partitionInfoSource)));
         return result;
     }
