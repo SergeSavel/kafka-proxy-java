@@ -86,6 +86,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
             case "/create-acls" -> decodeCreateAcls(ctx, httpRequest);
             case "/delete-acls" -> decodeDeleteAcls(ctx, httpRequest);
             case "/create-partitions" -> decodeCreatePartitions(ctx, httpRequest);
+            case "/describe-producers" -> decodeDescribeProducers(ctx, httpRequest);
             case "" -> decodeList(ctx, httpRequest);
             default -> HttpUtils.writeNotFoundAndClose(ctx, httpRequest.protocolVersion());
         }
@@ -252,6 +253,14 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     private void decodeCreatePartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminCreatePartitionsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDescribeProducers(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDescribeProducersRequest.class);
         } else {
             throw new BadRequestException("Unsupported HTTP method.");
         }

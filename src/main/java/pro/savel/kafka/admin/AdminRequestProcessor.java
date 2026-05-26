@@ -124,6 +124,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             processDeleteAcls(ctx, requestBearer);
         else if (requestClass == AdminCreatePartitionsRequest.class)
             processCreatePartitions(ctx, requestBearer);
+        else if (requestClass == AdminDescribeProducersRequest.class)
+            processDescribeProducers(ctx, requestBearer);
         else
             throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
@@ -554,6 +556,32 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                 HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             else {
                 logger.error("Unable to delete ACLs.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+//endregion
+
+//region Producers
+
+    private void processDescribeProducers(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDescribeProducersRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var partitions = AdminRequestMapper.mapPartitions(request.getPartitions());
+        var describeResult = admin.describeProducers(partitions);
+        describeResult.all().whenComplete((producerStates, error) -> {
+            if (error == null) {
+                var response = AdminResponseMapper.mapDescribeProducerResponse(producerStates);
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+            } else if (error instanceof ClusterAuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof TopicAuthorizationException)
+                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to describe producers.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });

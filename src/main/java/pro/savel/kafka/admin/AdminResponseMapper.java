@@ -15,6 +15,7 @@
 package pro.savel.kafka.admin;
 
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclOperation;
@@ -198,4 +199,40 @@ public class AdminResponseMapper {
         result.setPermissionType(source.permissionType().name());
         return result;
     }
+
+    public static AdminDescribeProducersResponse mapDescribeProducerResponse(Map<TopicPartition, DescribeProducersResult.PartitionProducerState> source) {
+        if (source == null)
+            return null;
+        var result = new AdminDescribeProducersResponse(source.size());
+        source.forEach((topicPartition, partitionProducerState) -> result.add(mapPartitionProducerState(topicPartition, partitionProducerState)));
+        return result;
+    }
+
+    private static AdminDescribeProducersResponse.PartitionProducerState mapPartitionProducerState(TopicPartition topicPartition, DescribeProducersResult.PartitionProducerState partitionProducerState) {
+        if (topicPartition == null || partitionProducerState == null)
+            return null;
+        var activeProducers = new ArrayList<AdminDescribeProducersResponse.ProducerState>(partitionProducerState.activeProducers().size());
+        partitionProducerState.activeProducers().forEach(producerState -> activeProducers.add(mapProducerState(producerState)));
+        var result = new AdminDescribeProducersResponse.PartitionProducerState();
+        result.setTopic(topicPartition.topic());
+        result.setPartition(topicPartition.partition());
+        result.setActiveProducers(activeProducers);
+        return result;
+    }
+
+    private static AdminDescribeProducersResponse.ProducerState mapProducerState(ProducerState source) {
+        if (source == null)
+            return null;
+        Long currentTransactionStartOffset = source.currentTransactionStartOffset().isPresent() ? source.currentTransactionStartOffset().getAsLong() : null;
+        Integer coordinatorEpoch = source.coordinatorEpoch().isPresent() ? source.coordinatorEpoch().getAsInt() : null;
+        var result = new AdminDescribeProducersResponse.ProducerState();
+        result.setProducerId(source.producerId());
+        result.setProducerEpoch(source.producerEpoch());
+        result.setLastSequence(source.lastSequence());
+        result.setLastTimestamp(source.lastTimestamp());
+        result.setCurrentTransactionStartOffset(currentTransactionStartOffset);
+        result.setCoordinatorEpoch(coordinatorEpoch);
+        return result;
+    }
+
 }

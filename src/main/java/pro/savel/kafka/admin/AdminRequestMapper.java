@@ -14,6 +14,7 @@
 
 package pro.savel.kafka.admin;
 
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.acl.*;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
@@ -26,6 +27,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class AdminRequestMapper {
+
+    public static Collection<TopicPartition> mapPartitions(Collection<pro.savel.kafka.common.contract.TopicPartition> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<TopicPartition>(source.size());
+        source.forEach(topicPartition -> result.add(mapTopicPartition(topicPartition)));
+        return result;
+    }
+
+    public static TopicPartition mapTopicPartition(pro.savel.kafka.common.contract.TopicPartition source) {
+        if (source == null)
+            return null;
+        return new TopicPartition(source.topic(), source.partition());
+    }
 
     public static Collection<AclBindingFilter> mapAclBindingFilters(Collection<AdminAclBindingFilter> source) {
         if (source == null)

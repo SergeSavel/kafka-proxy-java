@@ -41,6 +41,12 @@ public abstract class CommonMapper {
         return result;
     }
 
+    public static pro.savel.kafka.common.contract.TopicPartition mapTopicPartition(org.apache.kafka.common.TopicPartition source) {
+        if (source == null)
+            return null;
+        return new pro.savel.kafka.common.contract.TopicPartition(source.topic(), source.partition());
+    }
+
     public static PartitionInfo mapTopicPartitionInfo(org.apache.kafka.common.TopicPartitionInfo source) {
         if (source == null)
             return null;
