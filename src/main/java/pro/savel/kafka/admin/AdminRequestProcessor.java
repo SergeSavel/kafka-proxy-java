@@ -84,6 +84,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         provider.close();
     }
 
+//endregion
+
     public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
         var requestClass = requestBearer.request().getClass();
         if (requestClass == AdminDescribeTopicRequest.class)
@@ -131,9 +133,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         else
             throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
-
-//endregion
-
+    
 //region Management
 
     private void processList(ChannelHandlerContext ctx, RequestBearer requestBearer) {
