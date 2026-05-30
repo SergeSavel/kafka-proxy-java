@@ -244,12 +244,6 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void decodeListRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
-        var request = new AdminListRequest();
-        var bearer = new RequestBearer(httpRequest, request);
-        ctx.fireChannelRead(bearer);
-    }
-
     private void decodeCreatePartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminCreatePartitionsRequest.class);
@@ -264,6 +258,12 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
         } else {
             throw new BadRequestException("Unsupported HTTP method.");
         }
+    }
+
+    private void decodeListRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
+        var request = new AdminListRequest();
+        var bearer = new RequestBearer(httpRequest, request);
+        ctx.fireChannelRead(bearer);
     }
 
     private <T extends AdminRequest> void decodeJsonRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest, Class<T> clazz) throws BadRequestException {
