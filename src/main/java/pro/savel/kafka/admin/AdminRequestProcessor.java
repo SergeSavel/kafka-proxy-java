@@ -47,6 +47,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
     private final AdminProvider provider = new AdminProvider();
 
+//region Overrides
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof RequestBearer bearer && bearer.request() instanceof AdminRequest) {
@@ -129,6 +131,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         else
             throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
+
+//endregion
 
 //region Management
 
