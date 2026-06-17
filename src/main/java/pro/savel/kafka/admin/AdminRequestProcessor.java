@@ -94,6 +94,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             processCreateTopic(ctx, requestBearer);
         else if (requestClass == AdminDeleteTopicRequest.class)
             processDeleteTopic(ctx, requestBearer);
+        else if (requestClass == AdminDeleteTopicsRequest.class)
+            processDeleteTopics(ctx, requestBearer);
         else if (requestClass == AdminListTopicsRequest.class)
             processListTopics(ctx, requestBearer);
         else if (requestClass == AdminDescribeTopicConfigsRequest.class)
@@ -293,12 +295,30 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
         var admin = wrapper.getAdmin();
-        var deleteResult = admin.deleteTopics(Collections.singleton(request.getTopicName()));
-        deleteResult.all().whenComplete((topics, error) -> {
+        var topics = Collections.singleton(request.getTopicName());
+        var deleteResult = admin.deleteTopics(topics);
+        deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null) {
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
             } else {
                 logger.error("Unable to delete topic.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteTopicsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var topics = request.getTopicNames();
+        var deleteResult = admin.deleteTopics(topics);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null) {
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            } else {
+                logger.error("Unable to delete topics.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });

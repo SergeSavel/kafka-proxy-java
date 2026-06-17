@@ -71,6 +71,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
             case "/list-topics" -> decodeListTopics(ctx, httpRequest);
             case "/create-topic" -> decodeCreateTopic(ctx, httpRequest);
             case "/delete-topic" -> decodeDeleteTopic(ctx, httpRequest);
+            case "/delete-topics" -> decodeDeleteTopics(ctx, httpRequest);
             case "/describe-topic-configs" -> decodeDescribeTopicConfigs(ctx, httpRequest);
             case "/describe-broker-configs" -> decodeDescribeBrokerConfigs(ctx, httpRequest);
             case "/describe-cluster" -> decodeDescribeCluster(ctx, httpRequest);
@@ -151,6 +152,14 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     private void decodeDeleteTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicsRequest.class);
         } else {
             throw new BadRequestException("Unsupported HTTP method.");
         }
