@@ -94,6 +94,14 @@ public abstract class HttpUtils {
         writeHttpResponseAndClose(ctx, version, HttpResponseStatus.FORBIDDEN, message);
     }
 
+    public static void writeConflictAndClose(ChannelHandlerContext ctx, HttpVersion version) {
+        writeConflictAndClose(ctx, version, null);
+    }
+
+    public static void writeConflictAndClose(ChannelHandlerContext ctx, HttpVersion version, String message) {
+        writeHttpResponseAndClose(ctx, version, HttpResponseStatus.CONFLICT, message);
+    }
+
     public static void writeInternalServerErrorAndClose(ChannelHandlerContext ctx, HttpVersion version) {
         writeInternalServerErrorAndClose(ctx, version, null);
     }
