@@ -20,24 +20,23 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.GroupState;
+import org.apache.kafka.common.GroupType;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.admin.requests.*;
-import pro.savel.kafka.admin.responses.AdminConfigResponse;
-import pro.savel.kafka.admin.responses.AdminDescribeClusterResponse;
+import pro.savel.kafka.admin.responses.*;
 import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.NotFoundException;
 import pro.savel.kafka.common.exceptions.UnauthenticatedException;
 import pro.savel.kafka.common.exceptions.UnauthorizedException;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @ChannelHandler.Sharable
@@ -132,10 +131,40 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             processCreatePartitions(ctx, requestBearer);
         else if (requestClass == AdminDescribeProducersRequest.class)
             processDescribeProducers(ctx, requestBearer);
+        else if (requestClass == AdminListGroupsRequest.class)
+            processListGroups(ctx, requestBearer);
+        else if (requestClass == AdminDescribeClassicGroupRequest.class)
+            processDescribeClassicGroup(ctx, requestBearer);
+        else if (requestClass == AdminDescribeConsumerGroupRequest.class)
+            processDescribeConsumerGroup(ctx, requestBearer);
+        else if (requestClass == AdminDescribeShareGroupRequest.class)
+            processDescribeShareGroup(ctx, requestBearer);
+        else if (requestClass == AdminDescribeStreamsGroupRequest.class)
+            processDescribeStreamsGroup(ctx, requestBearer);
+        else if (requestClass == AdminListConsumerGroupOffsetsRequest.class)
+            processListConsumerGroupOffsets(ctx, requestBearer);
+        else if (requestClass == AdminAlterConsumerGroupOffsetsRequest.class)
+            processAlterConsumerGroupOffsets(ctx, requestBearer);
+        else if (requestClass == AdminDeleteConsumerGroupOffsetsRequest.class)
+            processDeleteConsumerGroupOffsets(ctx, requestBearer);
+        else if (requestClass == AdminRemoveMembersFromConsumerGroupRequest.class)
+            processRemoveMembersFromConsumerGroup(ctx, requestBearer);
+        else if (requestClass == AdminDeleteConsumerGroupRequest.class)
+            processDeleteConsumerGroup(ctx, requestBearer);
+        else if (requestClass == AdminDeleteConsumerGroupsRequest.class)
+            processDeleteConsumerGroups(ctx, requestBearer);
+        else if (requestClass == AdminDeleteShareGroupRequest.class)
+            processDeleteShareGroup(ctx, requestBearer);
+        else if (requestClass == AdminDeleteShareGroupsRequest.class)
+            processDeleteShareGroups(ctx, requestBearer);
+        else if (requestClass == AdminDeleteStreamsGroupRequest.class)
+            processDeleteStreamsGroup(ctx, requestBearer);
+        else if (requestClass == AdminDeleteStreamsGroupsRequest.class)
+            processDeleteStreamsGroups(ctx, requestBearer);
         else
             throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
-    
+
 //region Management
 
     private void processList(ChannelHandlerContext ctx, RequestBearer requestBearer) {
@@ -608,6 +637,383 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                 HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             else {
                 logger.error("Unable to describe producers.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+//endregion
+
+//region Groups
+
+    private void processListGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminListGroupsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var options = new ListGroupsOptions();
+        if (request.getWithTypes() != null) {
+            var groupTypes = new HashSet<GroupType>();
+            for (String groupTypeName : request.getWithTypes()) {
+                var groupType = GroupType.parse(groupTypeName);
+                if (groupType == null || groupType == GroupType.UNKNOWN) {
+                    HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), "Invalid group type: '" + groupTypeName + "'.");
+                    return;
+                }
+                groupTypes.add(groupType);
+            }
+            options = options.withTypes(groupTypes);
+        }
+        if (request.getWithProtocolTypes() != null) {
+            var protocolTypes = new HashSet<>(request.getWithProtocolTypes());
+            options = options.withProtocolTypes(protocolTypes);
+        }
+        if (request.getInStates() != null) {
+            var groupStates = new HashSet<GroupState>();
+            for (String groupStateName : request.getInStates()) {
+                var groupState = GroupState.parse(groupStateName);
+                if (groupState == null || groupState == GroupState.UNKNOWN) {
+                    HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), "Invalid group state: '" + groupStateName + "'.");
+                    return;
+                }
+                groupStates.add(groupState);
+            }
+            options = options.inGroupStates(groupStates);
+        }
+        var listGroupsResult = admin.listGroups(options);
+        listGroupsResult.all().whenComplete((groupListings, error) -> {
+            if (error == null) {
+                var response = AdminListGroupsResponse.map(groupListings);
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+            } else {
+                logger.error("Unable to get group listings.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDescribeClassicGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDescribeClassicGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var options = new DescribeClassicGroupsOptions();
+        if (request.getIncludeAuthorizedOperations() != null)
+            options = options.includeAuthorizedOperations(request.getIncludeAuthorizedOperations());
+        var groupIds = Collections.singleton(request.getGroupId());
+        var describeResult = admin.describeClassicGroups(groupIds, options);
+        describeResult.all().whenComplete((classicGroupDescriptions, error) -> {
+            if (error == null) {
+                if (classicGroupDescriptions.isEmpty()) {
+                    HttpUtils.writeNotFoundAndClose(ctx, requestBearer.protocolVersion(), "Classic group not found.");
+                    return;
+                }
+                for (var classicGroupDescription : classicGroupDescriptions.values()) {
+                    var response = AdminDescribeClassicGroupResponse.map(classicGroupDescription);
+                    ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+                    break;
+                }
+            } else {
+                logger.error("Unable to get classic group description.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDescribeConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDescribeConsumerGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var options = new DescribeConsumerGroupsOptions();
+        if (request.getIncludeAuthorizedOperations() != null)
+            options = options.includeAuthorizedOperations(request.getIncludeAuthorizedOperations());
+        var groupIds = Collections.singleton(request.getGroupId());
+        var describeResult = admin.describeConsumerGroups(groupIds, options);
+        describeResult.all().whenComplete((consumerGroupDescriptions, error) -> {
+            if (error == null) {
+                if (consumerGroupDescriptions.isEmpty()) {
+                    HttpUtils.writeNotFoundAndClose(ctx, requestBearer.protocolVersion(), "Consumer group not found.");
+                    return;
+                }
+                for (var consumerGroupDescription : consumerGroupDescriptions.values()) {
+                    var response = AdminDescribeConsumerGroupResponse.map(consumerGroupDescription);
+                    ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+                    break;
+                }
+            } else {
+                logger.error("Unable to get consumer group description.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDescribeShareGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDescribeShareGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var options = new DescribeShareGroupsOptions();
+        if (request.getIncludeAuthorizedOperations() != null)
+            options = options.includeAuthorizedOperations(request.getIncludeAuthorizedOperations());
+        var groupIds = Collections.singleton(request.getGroupId());
+        var describeResult = admin.describeShareGroups(groupIds, options);
+        describeResult.all().whenComplete((shareGroupDescriptions, error) -> {
+            if (error == null) {
+                if (shareGroupDescriptions.isEmpty()) {
+                    HttpUtils.writeNotFoundAndClose(ctx, requestBearer.protocolVersion(), "Share group not found.");
+                    return;
+                }
+                for (var shareGroupDescription : shareGroupDescriptions.values()) {
+                    var response = AdminDescribeShareGroupResponse.map(shareGroupDescription);
+                    ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+                    break;
+                }
+            } else {
+                logger.error("Unable to get share group description.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDescribeStreamsGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDescribeStreamsGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var options = new DescribeStreamsGroupsOptions();
+        if (request.getIncludeAuthorizedOperations() != null)
+            options = options.includeAuthorizedOperations(request.getIncludeAuthorizedOperations());
+        var groupIds = Collections.singleton(request.getGroupId());
+        var describeResult = admin.describeStreamsGroups(groupIds, options);
+        describeResult.all().whenComplete((streamsGroupDescriptions, error) -> {
+            if (error == null) {
+                if (streamsGroupDescriptions.isEmpty()) {
+                    HttpUtils.writeNotFoundAndClose(ctx, requestBearer.protocolVersion(), "Streams group not found.");
+                    return;
+                }
+                for (var streamsGroupDescription : streamsGroupDescriptions.values()) {
+                    var response = AdminDescribeStreamsGroupResponse.map(streamsGroupDescription);
+                    ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+                    break;
+                }
+            } else {
+                logger.error("Unable to get streams group description.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processListConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminListConsumerGroupOffsetsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupId = request.getGroupId();
+        var options = new ListConsumerGroupOffsetsOptions();
+        if (request.getRequireStable() != null)
+            options = options.requireStable(request.getRequireStable());
+        var listResult = admin.listConsumerGroupOffsets(groupId, options);
+        listResult.all().whenComplete((offsets, error) -> {
+            if (error == null) {
+                if (offsets.isEmpty()) {
+                    HttpUtils.writeNotFoundAndClose(ctx, requestBearer.protocolVersion(), "Consumer group not found.");
+                    return;
+                }
+                for (var consumerGroupOffsets : offsets.values()) {
+                    var response = AdminListConsumerGroupOffsetsResponse.map(consumerGroupOffsets);
+                    ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+                    break;
+                }
+            } else {
+                logger.error("Unable to list consumer group offsets.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processAlterConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminAlterConsumerGroupOffsetsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupId = request.getGroupId();
+        var offsets = AdminRequestMapper.mapTopicPartitionOffsetMetadata(request.getOffsets());
+        var alterResult = admin.alterConsumerGroupOffsets(groupId, offsets);
+        alterResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupSubscribedToTopicException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else if (error instanceof CompletionException && error.getCause() instanceof UnknownMemberIdException e)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), e.getMessage());
+            else {
+                logger.error("Unable to alter consumer group offsets.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteConsumerGroupOffsetsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupId = request.getGroupId();
+        var partitions = CommonRequestMapper.mapPartitions(request.getPartitions());
+        var deleteResult = admin.deleteConsumerGroupOffsets(groupId, partitions);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupSubscribedToTopicException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete consumer group offsets.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminRemoveMembersFromConsumerGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupId = request.getGroupId();
+        RemoveMembersFromConsumerGroupOptions options;
+        if (request.getMembers() == null)
+            options = new RemoveMembersFromConsumerGroupOptions();
+        else {
+            var members = request.getMembers().stream()
+                    .distinct()
+                    .map(MemberToRemove::new)
+                    .toList();
+            options = new RemoveMembersFromConsumerGroupOptions(members);
+        }
+        if (request.getReason() != null)
+            options.reason(request.getReason());
+        var removeResult = admin.removeMembersFromConsumerGroup(groupId, options);
+        removeResult.all().whenComplete((ignore, error) -> {
+            if (error == null) {
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            } else if (error instanceof UnknownMemberIdException exception) {
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
+            } else {
+                logger.error("Unable to remove members from consumer group.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteConsumerGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupIds = Collections.singleton(request.getGroupId());
+        var deleteResult = admin.deleteConsumerGroups(groupIds);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupNotEmptyException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete consumer group.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteConsumerGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteConsumerGroupsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupIds = request.getGroupIds();
+        var deleteResult = admin.deleteConsumerGroups(groupIds);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupNotEmptyException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete consumer groups.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteShareGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteShareGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupIds = Collections.singleton(request.getGroupId());
+        var deleteResult = admin.deleteShareGroups(groupIds);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupNotEmptyException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete share group.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteShareGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteShareGroupsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupIds = request.getGroupIds();
+        var deleteResult = admin.deleteShareGroups(groupIds);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupNotEmptyException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete share groups.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteStreamsGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteStreamsGroupRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupIds = Collections.singleton(request.getGroupId());
+        var deleteResult = admin.deleteStreamsGroups(groupIds);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupNotEmptyException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete streams group.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+    private void processDeleteStreamsGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminDeleteStreamsGroupsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var groupIds = request.getGroupIds();
+        var deleteResult = admin.deleteStreamsGroups(groupIds);
+        deleteResult.all().whenComplete((ignore, error) -> {
+            if (error == null)
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
+            else if (error instanceof GroupNotEmptyException)
+                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            else {
+                logger.error("Unable to delete streams groups.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });

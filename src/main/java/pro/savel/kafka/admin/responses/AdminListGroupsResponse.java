@@ -12,27 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pro.savel.kafka.common;
+package pro.savel.kafka.admin.responses;
 
-import org.apache.kafka.common.TopicPartition;
-
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
-public abstract class CommonRequestMapper {
+public class AdminListGroupsResponse extends ArrayList<GroupListing> implements AdminResponse {
 
-    public static Set<TopicPartition> mapPartitions(Collection<pro.savel.kafka.common.contract.TopicPartition> source) {
-        if (source == null)
-            return null;
-        var result = new HashSet<TopicPartition>(source.size());
-        source.forEach(topicPartition -> result.add(mapTopicPartition(topicPartition)));
-        return result;
+    private AdminListGroupsResponse(int initialCapacity) {
+        super(initialCapacity);
     }
 
-    public static TopicPartition mapTopicPartition(pro.savel.kafka.common.contract.TopicPartition source) {
+    public static AdminListGroupsResponse map(Collection<org.apache.kafka.clients.admin.GroupListing> source) {
         if (source == null)
             return null;
-        return new TopicPartition(source.topic(), source.partition());
+        var result = new AdminListGroupsResponse(source.size());
+        source.forEach(item -> result.add(GroupListing.map(item)));
+        return result;
     }
 }

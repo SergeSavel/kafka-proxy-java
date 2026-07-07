@@ -42,6 +42,14 @@ public abstract class CommonResponseMapper {
         return result;
     }
 
+    public static Collection<TopicPartition> mapTopicPartitions(Collection<org.apache.kafka.common.TopicPartition> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<TopicPartition>(source.size());
+        source.forEach(partition -> result.add(mapTopicPartition(partition)));
+        return result;
+    }
+
     public static TopicPartition mapTopicPartition(org.apache.kafka.common.TopicPartition source) {
         if (source == null)
             return null;

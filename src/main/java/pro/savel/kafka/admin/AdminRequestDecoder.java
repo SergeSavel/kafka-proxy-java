@@ -88,6 +88,21 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
             case "/delete-acls" -> decodeDeleteAcls(ctx, httpRequest);
             case "/create-partitions" -> decodeCreatePartitions(ctx, httpRequest);
             case "/describe-producers" -> decodeDescribeProducers(ctx, httpRequest);
+            case "/list-groups" -> decodeListGroups(ctx, httpRequest);
+            case "/describe-classic-group" -> decodeDescribeClassicGroup(ctx, httpRequest);
+            case "/describe-consumer-group" -> decodeDescribeConsumerGroup(ctx, httpRequest);
+            case "/describe-share-group" -> decodeDescribeShareGroup(ctx, httpRequest);
+            case "/describe-streams-group" -> decodeDescribeStreamsGroup(ctx, httpRequest);
+            case "/list-consumer-group-offsets" -> decodeListConsumerGroupOffsets(ctx, httpRequest);
+            case "/alter-consumer-group-offsets" -> decodeAlterConsumerGroupOffsets(ctx, httpRequest);
+            case "/delete-consumer-group-offsets" -> decodeDeleteConsumerGroupOffsets(ctx, httpRequest);
+            case "/remove-members-from-consumer-group" -> decodeRemoveMembersFromConsumerGroup(ctx, httpRequest);
+            case "/delete-consumer-group" -> decodeDeleteConsumerGroup(ctx, httpRequest);
+            case "/delete-consumer-groups" -> decodeDeleteConsumerGroups(ctx, httpRequest);
+            case "/delete-share-group" -> decodeDeleteShareGroup(ctx, httpRequest);
+            case "/delete-share-groups" -> decodeDeleteShareGroups(ctx, httpRequest);
+            case "/delete-streams-group" -> decodeDeleteStreamsGroup(ctx, httpRequest);
+            case "/delete-streams-groups" -> decodeDeleteStreamsGroups(ctx, httpRequest);
             case "" -> decodeList(ctx, httpRequest);
             default -> HttpUtils.writeNotFoundAndClose(ctx, httpRequest.protocolVersion());
         }
@@ -264,6 +279,126 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     private void decodeDescribeProducers(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeProducersRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListGroupsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDescribeClassicGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDescribeClassicGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDescribeConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDescribeConsumerGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDescribeShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDescribeShareGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDescribeStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDescribeStreamsGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListConsumerGroupOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeAlterConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminAlterConsumerGroupOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminRemoveMembersFromConsumerGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteConsumerGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteShareGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteShareGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteShareGroupsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeDeleteStreamsGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupsRequest.class);
         } else {
             throw new BadRequestException("Unsupported HTTP method.");
         }

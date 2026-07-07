@@ -15,10 +15,14 @@
 package pro.savel.kafka.admin;
 
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.ClassicGroupState;
+import org.apache.kafka.common.GroupState;
+import org.apache.kafka.common.GroupType;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import pro.savel.kafka.admin.data.AdminAclBinding;
 import pro.savel.kafka.admin.responses.*;
@@ -75,11 +79,11 @@ public class AdminResponseMapper {
         return result;
     }
 
-    public static HashSet<String> mapAclOperations(Set<AclOperation> source) {
+    public static Set<String> mapAclOperations(Set<AclOperation> source) {
         if (source == null)
             return null;
         var result = new HashSet<String>(source.size());
-        source.forEach(aclOperation -> result.add(aclOperation.name()));
+        source.forEach(aclOperation -> result.add(mapAclOperation(aclOperation)));
         return result;
     }
 
@@ -186,9 +190,21 @@ public class AdminResponseMapper {
         var result = new AdminAclBinding.AccessControlEntry();
         result.setPrincipal(source.principal());
         result.setHost(source.host());
-        result.setOperation(source.operation().name());
-        result.setPermissionType(source.permissionType().name());
+        result.setOperation(mapAclOperation(source.operation()));
+        result.setPermissionType(mapAclPermissionType(source.permissionType()));
         return result;
+    }
+
+    public static String mapAclOperation(AclOperation source) {
+        if (source == null)
+            return null;
+        return source.name();
+    }
+
+    public static String mapAclPermissionType(AclPermissionType source) {
+        if (source == null)
+            return null;
+        return source.name();
     }
 
     public static AdminDescribeProducersResponse mapDescribeProducerResponse(Map<TopicPartition, DescribeProducersResult.PartitionProducerState> source) {
@@ -226,4 +242,33 @@ public class AdminResponseMapper {
         return result;
     }
 
+    public static String mapGroupType(GroupType source) {
+        if (source == null)
+            return null;
+        return source.name();
+    }
+
+    public static String mapGroupState(GroupState source) {
+        if (source == null)
+            return null;
+        return source.name();
+    }
+
+    public static String mapGroupState(ClassicGroupState source) {
+        if (source == null)
+            return null;
+        return source.name();
+    }
+
+    public static Collection<pro.savel.kafka.common.contract.TopicPartition> mapMemberAssignment(MemberAssignment source) {
+        if (source == null)
+            return null;
+        return CommonResponseMapper.mapTopicPartitions(source.topicPartitions());
+    }
+
+    public static Collection<pro.savel.kafka.common.contract.TopicPartition> mapMemberAssignment(ShareMemberAssignment source) {
+        if (source == null)
+            return null;
+        return CommonResponseMapper.mapTopicPartitions(source.topicPartitions());
+    }
 }

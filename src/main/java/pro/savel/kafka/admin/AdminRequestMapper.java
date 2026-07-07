@@ -14,6 +14,8 @@
 
 package pro.savel.kafka.admin;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.acl.*;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
@@ -21,9 +23,12 @@ import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.resource.ResourceType;
 import pro.savel.kafka.admin.data.AdminAclBinding;
 import pro.savel.kafka.admin.data.AdminAclBindingFilter;
+import pro.savel.kafka.admin.requests.AdminAlterConsumerGroupOffsetsRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AdminRequestMapper {
 
@@ -95,5 +100,17 @@ public class AdminRequestMapper {
         var operation = AclOperation.valueOf(source.getOperation());
         var permissionType = AclPermissionType.valueOf(source.getPermissionType());
         return new AccessControlEntry(principal, host, operation, permissionType);
+    }
+
+    public static Map<TopicPartition, OffsetAndMetadata> mapTopicPartitionOffsetMetadata(Collection<AdminAlterConsumerGroupOffsetsRequest.TopicPartitionOffsetMetadata> source) {
+        if (source == null)
+            return null;
+        var result = new HashMap<TopicPartition, OffsetAndMetadata>(source.size());
+        source.forEach(item -> {
+            var topicPartition = new TopicPartition(item.getTopic(), item.getPartition());
+            var offsetAndMetadata = new OffsetAndMetadata(item.getOffset(), item.getMetadata());
+            result.put(topicPartition, offsetAndMetadata);
+        });
+        return result;
     }
 }
