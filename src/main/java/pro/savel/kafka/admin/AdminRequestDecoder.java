@@ -103,6 +103,12 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
             case "/delete-share-groups" -> decodeDeleteShareGroups(ctx, httpRequest);
             case "/delete-streams-group" -> decodeDeleteStreamsGroup(ctx, httpRequest);
             case "/delete-streams-groups" -> decodeDeleteStreamsGroups(ctx, httpRequest);
+            case "/list-earliest-offsets" -> decodeListEarliestOffsets(ctx, httpRequest);
+            case "/list-earliest-local-offsets" -> decodeListEarliestLocalOffsets(ctx, httpRequest);
+            case "/list-latest-offsets" -> decodeListLatestOffsets(ctx, httpRequest);
+            case "/list-latest-tiered-offsets" -> decodeListLatestTieredOffsets(ctx, httpRequest);
+            case "/list-max-timestamp-offsets" -> decodeListMaxTimestampOffsets(ctx, httpRequest);
+            case "/list-timestamp-offsets" -> decodeListTimestampOffsets(ctx, httpRequest);
             case "" -> decodeList(ctx, httpRequest);
             default -> HttpUtils.writeNotFoundAndClose(ctx, httpRequest.protocolVersion());
         }
@@ -399,6 +405,54 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     private void decodeDeleteStreamsGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListEarliestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListEarliestOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListEarliestLocalOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListEarliestLocalOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListLatestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListLatestOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListLatestTieredOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListLatestTieredOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListMaxTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListMaxTimestampOffsetsRequest.class);
+        } else {
+            throw new BadRequestException("Unsupported HTTP method.");
+        }
+    }
+
+    private void decodeListTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+        if (httpRequest.method() == HttpMethod.POST) {
+            decodeJsonRequest(ctx, httpRequest, AdminListTimestampOffsetsRequest.class);
         } else {
             throw new BadRequestException("Unsupported HTTP method.");
         }

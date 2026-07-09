@@ -20,9 +20,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.GroupState;
-import org.apache.kafka.common.GroupType;
-import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.*;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.*;
 import org.slf4j.Logger;
@@ -38,6 +36,7 @@ import pro.savel.kafka.common.exceptions.UnauthorizedException;
 import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @ChannelHandler.Sharable
 public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implements AutoCloseable {
@@ -161,6 +160,18 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             processDeleteStreamsGroup(ctx, requestBearer);
         else if (requestClass == AdminDeleteStreamsGroupsRequest.class)
             processDeleteStreamsGroups(ctx, requestBearer);
+        else if (requestClass == AdminListEarliestOffsetsRequest.class)
+            processListEarliestOffsetsRequest(ctx, requestBearer);
+        else if (requestClass == AdminListEarliestLocalOffsetsRequest.class)
+            processListEarliestLocalOffsetsRequest(ctx, requestBearer);
+        else if (requestClass == AdminListLatestOffsetsRequest.class)
+            processListLatestOffsetsRequest(ctx, requestBearer);
+        else if (requestClass == AdminListLatestTieredOffsetsRequest.class)
+            processListLatestTieredOffsetsRequest(ctx, requestBearer);
+        else if (requestClass == AdminListMaxTimestampOffsetsRequest.class)
+            processListMaxTimestampOffsetsRequest(ctx, requestBearer);
+        else if (requestClass == AdminListTimestampOffsetsRequest.class)
+            processListTimestampOffsetsRequest(ctx, requestBearer);
         else
             throw new RuntimeException("Unexpected admin request type: " + requestClass.getName());
     }
@@ -1019,5 +1030,73 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-//endregion
+// endregion
+
+//region Offsets
+
+    private void processListEarliestOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var offsetSpec = OffsetSpec.earliest();
+        processListOffsetsRequest(ctx, requestBearer, offsetSpec);
+    }
+
+    private void processListEarliestLocalOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var offsetSpec = OffsetSpec.earliestLocal();
+        processListOffsetsRequest(ctx, requestBearer, offsetSpec);
+    }
+
+    private void processListLatestOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var offsetSpec = OffsetSpec.latest();
+        processListOffsetsRequest(ctx, requestBearer, offsetSpec);
+    }
+
+    private void processListLatestTieredOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var offsetSpec = OffsetSpec.latestTiered();
+        processListOffsetsRequest(ctx, requestBearer, offsetSpec);
+    }
+
+    private void processListMaxTimestampOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var offsetSpec = OffsetSpec.maxTimestamp();
+        processListOffsetsRequest(ctx, requestBearer, offsetSpec);
+    }
+
+    private void processListTimestampOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var request = (AdminListTimestampOffsetsRequest) requestBearer.request();
+        var offsetSpec = OffsetSpec.forTimestamp(request.getTimestamp());
+        processListOffsetsRequest(ctx, requestBearer, offsetSpec);
+    }
+
+    private void processListOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer, OffsetSpec offsetSpec) throws NotFoundException, BadRequestException {
+        var request = (AdminListOffsetsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var topicPartitionOffsets = request.getPartitions().stream()
+                .collect(Collectors.toMap(topicPartition -> new TopicPartition(topicPartition.topic(), topicPartition.partition()), topicPartition -> offsetSpec));
+        ListOffsetsOptions options = null;
+        if (request.getIsolationLevel() != null) {
+            try {
+                var isolationLevel = IsolationLevel.valueOf(request.getIsolationLevel());
+                options = new ListOffsetsOptions(isolationLevel);
+            } catch (IllegalArgumentException e) {
+                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), e.getMessage());
+                return;
+            }
+        }
+        ListOffsetsResult listOffsetsResult;
+        if (options == null)
+            listOffsetsResult = admin.listOffsets(topicPartitionOffsets);
+        else
+            listOffsetsResult = admin.listOffsets(topicPartitionOffsets, options);
+        listOffsetsResult.all().whenComplete((offsets, error) -> {
+            if (error == null) {
+                var response = AdminListOffsetsResponse.map(offsets);
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+            } else {
+                logger.error("Unable to list offsets.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
+    }
+
+// endregion
 }
