@@ -29,6 +29,7 @@ import pro.savel.kafka.common.JsonUtils;
 import pro.savel.kafka.common.RequestBearer;
 import pro.savel.kafka.common.Utils;
 import pro.savel.kafka.common.exceptions.BadRequestException;
+import pro.savel.kafka.common.exceptions.MethodNotAllowedException;
 
 @ChannelHandler.Sharable
 public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
@@ -53,6 +54,8 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
                 decode(ctx, httpRequest);
             } catch (BadRequestException e) {
                 HttpUtils.writeBadRequestAndClose(ctx, httpRequest.protocolVersion(), Utils.combineErrorMessage(e));
+            } catch (MethodNotAllowedException e) {
+                HttpUtils.writeMethodNotAllowedAndClose(ctx, httpRequest.protocolVersion(), Utils.combineErrorMessage(e));
             } catch (Exception e) {
                 logger.error("An unexpected error occurred while decoding admin request.", e);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, httpRequest.protocolVersion(), Utils.combineErrorMessage(e));
@@ -64,7 +67,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         var pathMethod = httpRequest.uri().substring(URI_PREFIX.length());
         switch (pathMethod) {
             case "/describe-topic" -> decodeDescribeTopic(ctx, httpRequest);
@@ -114,347 +117,347 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void decodeList(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeList(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.GET) {
             decodeListRequest(ctx, httpRequest);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeCreate(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeCreate(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminCreateRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeRemove(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeRemove(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminRemoveRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeTouch(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeTouch(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminTouchRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeCluster(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeCluster(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeClusterRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListTopicsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeCreateTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeCreateTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminCreateTopicRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeTopicRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeBrokerConfigs(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeBrokerConfigs(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeBrokerConfigsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeTopicConfigs(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeTopicConfigs(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeTopicConfigsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeSetTopicConfig(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeSetTopicConfig(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminSetTopicConfigRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteTopicConfig(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteTopicConfig(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicConfigRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeUserScramCredentialsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeUpsertUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeUpsertUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminUpsertUserScramCredentialsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteUserScramCredentialsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeAclsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeCreateAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeCreateAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminCreateAclsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteAclsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeCreatePartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeCreatePartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminCreatePartitionsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeProducers(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeProducers(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeProducersRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListGroupsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeClassicGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeClassicGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeClassicGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeConsumerGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeShareGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDescribeStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDescribeStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDescribeStreamsGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListConsumerGroupOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeAlterConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeAlterConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminAlterConsumerGroupOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminRemoveMembersFromConsumerGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteConsumerGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteConsumerGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteShareGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteShareGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteShareGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteShareGroupsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeDeleteStreamsGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeDeleteStreamsGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListEarliestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListEarliestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListEarliestOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListEarliestLocalOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListEarliestLocalOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListEarliestLocalOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListLatestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListLatestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListLatestOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListLatestTieredOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListLatestTieredOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListLatestTieredOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListMaxTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListMaxTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListMaxTimestampOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 
-    private void decodeListTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
             decodeJsonRequest(ctx, httpRequest, AdminListTimestampOffsetsRequest.class);
         } else {
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
     }
 

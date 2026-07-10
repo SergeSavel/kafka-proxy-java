@@ -28,6 +28,7 @@ import pro.savel.kafka.common.JsonUtils;
 import pro.savel.kafka.common.RequestBearer;
 import pro.savel.kafka.common.Utils;
 import pro.savel.kafka.common.exceptions.BadRequestException;
+import pro.savel.kafka.common.exceptions.MethodNotAllowedException;
 import pro.savel.kafka.consumer.requests.*;
 
 @ChannelHandler.Sharable
@@ -49,6 +50,8 @@ public class ConsumerRequestDecoder extends ChannelInboundHandlerAdapter {
                 decode(ctx, httpRequest);
             } catch (BadRequestException e) {
                 HttpUtils.writeBadRequestAndClose(ctx, httpRequest.protocolVersion(), Utils.combineErrorMessage(e));
+            } catch (MethodNotAllowedException e) {
+                HttpUtils.writeMethodNotAllowedAndClose(ctx, httpRequest.protocolVersion(), Utils.combineErrorMessage(e));
             } catch (Exception e) {
                 logger.error("An unexpected error occurred while decoding consumer request.", e);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, httpRequest.protocolVersion(), Utils.combineErrorMessage(e));
@@ -65,7 +68,7 @@ public class ConsumerRequestDecoder extends ChannelInboundHandlerAdapter {
         ctx.fireChannelRead(bearer);
     }
 
-    private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         var pathMethod = httpRequest.uri().substring(URI_PREFIX.length());
         switch (pathMethod) {
             case "/poll" -> decodePoll(ctx, httpRequest);
@@ -88,116 +91,116 @@ public class ConsumerRequestDecoder extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void decodeList(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeList(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.GET)
             decodeListRequest(ctx, httpRequest);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeCreate(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeCreate(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerCreateRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeRelease(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeRelease(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerReleaseRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeTouch(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeTouch(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerTouchRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeAssign(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeAssign(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerAssignRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeGetAssignment(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeGetAssignment(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerGetAssignmentRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeSeek(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeSeek(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerSeekRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeGetPosition(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeGetPosition(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerGetPositionRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeSubscribe(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeSubscribe(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerSubscribeRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeGetSubscription(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeGetSubscription(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerGetSubscriptionRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeListTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerListTopicsRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeListPartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeListPartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerListPartitionsRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeGetBeginningOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeGetBeginningOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerGetBeginningOffsetsRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeGetEndOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeGetEndOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerGetEndOffsetsRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodePoll(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodePoll(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerPollRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
-    private void decodeCommit(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
+    private void decodeCommit(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
             decodeJsonRequest(ctx, httpRequest, ConsumerCommitRequest.class);
         else
-            throw new BadRequestException("Unsupported HTTP method.");
+            throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
 
     private void decodeListRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
