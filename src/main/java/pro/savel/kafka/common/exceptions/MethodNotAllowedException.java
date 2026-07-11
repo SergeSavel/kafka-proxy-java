@@ -14,7 +14,7 @@
 
 package pro.savel.kafka.common.exceptions;
 
-public class MethodNotAllowedException extends Exception {
+public class MethodNotAllowedException extends RuntimeException {
 
     public MethodNotAllowedException(String message, Throwable cause) {
         super(message, cause);

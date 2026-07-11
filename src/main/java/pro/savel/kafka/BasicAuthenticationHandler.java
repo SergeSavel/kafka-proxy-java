@@ -98,7 +98,7 @@ public class BasicAuthenticationHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void authenticate(ChannelHandlerContext ctx, FullHttpRequest request) throws UnauthenticatedException {
+    private void authenticate(ChannelHandlerContext ctx, FullHttpRequest request) {
 
         var users_ = users;
 

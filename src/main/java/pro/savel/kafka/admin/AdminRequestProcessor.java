@@ -30,8 +30,6 @@ import org.slf4j.LoggerFactory;
 import pro.savel.kafka.admin.requests.*;
 import pro.savel.kafka.admin.responses.*;
 import pro.savel.kafka.common.*;
-import pro.savel.kafka.common.exceptions.BadRequestException;
-import pro.savel.kafka.common.exceptions.NotFoundException;
 
 import java.util.*;
 import java.util.concurrent.CompletionException;
@@ -78,7 +76,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //endregion
 
-    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var requestClass = requestBearer.request().getClass();
         if (requestClass == AdminDescribeTopicRequest.class)
             processDescribeTopic(ctx, requestBearer);
@@ -188,14 +186,14 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processRemove(ChannelHandlerContext ctx, RequestBearer requestBearer) throws BadRequestException {
+    private void processRemove(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminRemoveRequest) requestBearer.request();
         provider.removeAdmin(request.getAdminId(), request.getToken());
         var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processTouch(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processTouch(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminTouchRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -207,7 +205,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Cluster
 
-    private void processDescribeCluster(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeCluster(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeClusterRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -265,7 +263,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Topics
 
-    private void processListTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminListTopicsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -282,7 +280,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDescribeTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeTopicRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -305,7 +303,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processCreateTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processCreateTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminCreateTopicRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -322,7 +320,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteTopic(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteTopicRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -339,7 +337,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteTopicsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -356,7 +354,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processCreatePartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processCreatePartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminCreatePartitionsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -377,7 +375,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Configs
 
-    private void processDescribeBrokerConfigs(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeBrokerConfigs(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeBrokerConfigsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -386,7 +384,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         processDescribeConfigs(ctx, requestBearer, admin, resource);
     }
 
-    private void processDescribeTopicConfigs(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeTopicConfigs(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeTopicConfigsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -414,7 +412,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processSetTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processSetTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminSetTopicConfigRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -427,7 +425,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         processIncrementalAlterConfigs(ctx, requestBearer, admin, configs);
     }
 
-    private void processDeleteTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteTopicConfig(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteTopicConfigRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -457,7 +455,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region User SCRAM credentials
 
-    private void processDescribeUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeUserScramCredentialsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -474,7 +472,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processUpsertUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processUpsertUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminUpsertUserScramCredentialsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -485,7 +483,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         processAlterUserScramCredentials(ctx, requestBearer, admin, alteration);
     }
 
-    private void processDeleteUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteUserScramCredentials(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteUserScramCredentialsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -511,7 +509,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Acls
 
-    private void processDescribeAcls(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeAcls(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeAclsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -529,7 +527,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processCreateAcls(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processCreateAcls(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminCreateAclsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -546,7 +544,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteAcls(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteAcls(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteAclsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -567,7 +565,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Producers
 
-    private void processDescribeProducers(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeProducers(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeProducersRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -589,7 +587,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Groups
 
-    private void processListGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminListGroupsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -635,7 +633,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDescribeClassicGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeClassicGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeClassicGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -663,7 +661,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDescribeConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeConsumerGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -691,7 +689,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDescribeShareGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeShareGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeShareGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -719,7 +717,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDescribeStreamsGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDescribeStreamsGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDescribeStreamsGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -747,7 +745,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processListConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminListConsumerGroupOffsetsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -775,7 +773,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processAlterConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processAlterConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminAlterConsumerGroupOffsetsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -793,7 +791,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteConsumerGroupOffsetsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -811,7 +809,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminRemoveMembersFromConsumerGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -840,7 +838,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteConsumerGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteConsumerGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -857,7 +855,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteConsumerGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteConsumerGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteConsumerGroupsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -874,7 +872,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteShareGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteShareGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteShareGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -891,7 +889,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteShareGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteShareGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteShareGroupsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -908,7 +906,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteStreamsGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteStreamsGroup(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteStreamsGroupRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -925,7 +923,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
     }
 
-    private void processDeleteStreamsGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processDeleteStreamsGroups(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminDeleteStreamsGroupsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
@@ -946,38 +944,38 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //region Offsets
 
-    private void processListEarliestOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListEarliestOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var offsetSpec = OffsetSpec.earliest();
         processListOffsetsRequest(ctx, requestBearer, offsetSpec);
     }
 
-    private void processListEarliestLocalOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListEarliestLocalOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var offsetSpec = OffsetSpec.earliestLocal();
         processListOffsetsRequest(ctx, requestBearer, offsetSpec);
     }
 
-    private void processListLatestOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListLatestOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var offsetSpec = OffsetSpec.latest();
         processListOffsetsRequest(ctx, requestBearer, offsetSpec);
     }
 
-    private void processListLatestTieredOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListLatestTieredOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var offsetSpec = OffsetSpec.latestTiered();
         processListOffsetsRequest(ctx, requestBearer, offsetSpec);
     }
 
-    private void processListMaxTimestampOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListMaxTimestampOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var offsetSpec = OffsetSpec.maxTimestamp();
         processListOffsetsRequest(ctx, requestBearer, offsetSpec);
     }
 
-    private void processListTimestampOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListTimestampOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (AdminListTimestampOffsetsRequest) requestBearer.request();
         var offsetSpec = OffsetSpec.forTimestamp(request.getTimestamp());
         processListOffsetsRequest(ctx, requestBearer, offsetSpec);
     }
 
-    private void processListOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer, OffsetSpec offsetSpec) throws NotFoundException, BadRequestException {
+    private void processListOffsetsRequest(ChannelHandlerContext ctx, RequestBearer requestBearer, OffsetSpec offsetSpec) {
         var request = (AdminListOffsetsRequest) requestBearer.request();
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();

@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
-import pro.savel.kafka.common.exceptions.NotFoundException;
 import pro.savel.kafka.consumer.requests.*;
 
 import java.time.Duration;
@@ -95,14 +94,14 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processRemove(ChannelHandlerContext ctx, RequestBearer requestBearer) throws BadRequestException {
+    private void processRemove(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerReleaseRequest) requestBearer.request();
         provider.removeConsumer(request.getConsumerId(), request.getToken());
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processTouch(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processTouch(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerTouchRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -112,7 +111,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
 //endregion
 
-    private void processPoll(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processPoll(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerPollRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -124,7 +123,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processCommit(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processCommit(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerPollRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -144,22 +143,18 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         consumer.commitAsync(callback);
     }
 
-    private void processAssign(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processAssign(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerAssignRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
         var assignment = CommonRequestMapper.mapPartitions(request.getPartitions());
-        try {
-            consumer.assign(assignment);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new BadRequestException("Unable to assign consumer.", e);
-        }
+        consumer.assign(assignment);
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processGetAssignment(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processGetAssignment(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerGetAssignmentRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -170,22 +165,18 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processSeek(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processSeek(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerSeekRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
         var topicPartition = new TopicPartition(request.getTopic(), request.getPartition());
-        try {
-            consumer.seek(topicPartition, request.getOffset());
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new BadRequestException("Unable to set position.", e);
-        }
+        consumer.seek(topicPartition, request.getOffset());
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var requestClass = requestBearer.request().getClass();
         if (requestClass == ConsumerPollRequest.class)
             processPoll(ctx, requestBearer);
@@ -223,26 +214,22 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
             throw new RuntimeException("Unexpected consumer request type: " + requestClass.getName());
     }
 
-    private void processSubscribe(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processSubscribe(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerSubscribeRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
-        try {
-            if (request.getTopics() != null)
-                consumer.subscribe(request.getTopics());
-            else {
-                var pattern = new SubscriptionPattern(request.getPattern());
-                consumer.subscribe(pattern);
-            }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new BadRequestException("Unable to subscribe.", e);
+        if (request.getTopics() != null)
+            consumer.subscribe(request.getTopics());
+        else {
+            var pattern = new SubscriptionPattern(request.getPattern());
+            consumer.subscribe(pattern);
         }
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processGetSubscription(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processGetSubscription(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerGetSubscriptionRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -253,7 +240,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processGetPosition(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processGetPosition(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerGetPositionRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -265,7 +252,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processListPartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListPartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerListPartitionsRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -276,7 +263,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processGetBeginningOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processGetBeginningOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerGetBeginningOffsetsRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -288,7 +275,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processGetEndOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processGetEndOffsets(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerGetEndOffsetsRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
@@ -300,7 +287,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processListTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processListTopics(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerListTopicsRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();

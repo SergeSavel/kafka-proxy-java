@@ -14,7 +14,7 @@
 
 package pro.savel.kafka.common.exceptions;
 
-public class UnauthorizedException extends Exception {
+public class UnauthorizedException extends RuntimeException {
 
     public UnauthorizedException(String message, Throwable cause) {
         super(message, cause);

@@ -14,7 +14,7 @@
 
 package pro.savel.kafka.common.exceptions;
 
-public class BadRequestException extends Exception {
+public class BadRequestException extends RuntimeException {
 
     public BadRequestException(String message, Throwable cause) {
         super(message, cause);

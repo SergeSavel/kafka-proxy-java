@@ -25,8 +25,6 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.*;
-import pro.savel.kafka.common.exceptions.BadRequestException;
-import pro.savel.kafka.common.exceptions.NotFoundException;
 import pro.savel.kafka.producer.requests.*;
 
 import java.util.concurrent.CompletionException;
@@ -71,7 +69,7 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
 //endregion
 
-    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var requestClass = requestBearer.request().getClass();
         if (requestClass == ProducerSendRequest.class)
             processSend(ctx, requestBearer);
@@ -107,14 +105,14 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processRemove(ChannelHandlerContext ctx, RequestBearer requestBearer) throws BadRequestException {
+    private void processRemove(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ProducerRemoveRequest) requestBearer.request();
         provider.removeProducer(request.getProducerId(), request.getToken());
         var responseBearer = new ProducerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processTouch(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processTouch(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ProducerTouchRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
         wrapper.touch();
@@ -124,7 +122,7 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
 //endregion
 
-    private void processSend(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processSend(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ProducerSendRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
         wrapper.touch();
@@ -152,7 +150,7 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         producer.send(record, callback);
     }
 
-    private void processGetPartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+    private void processGetPartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ProducerGetPartitionsRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
         wrapper.touch();
