@@ -24,20 +24,16 @@ import org.apache.kafka.clients.consumer.InvalidOffsetException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.SubscriptionPattern;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.AuthenticationException;
-import org.apache.kafka.common.errors.AuthorizationException;
-import org.apache.kafka.common.errors.InvalidTopicException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.NotFoundException;
-import pro.savel.kafka.common.exceptions.UnauthenticatedException;
-import pro.savel.kafka.common.exceptions.UnauthorizedException;
 import pro.savel.kafka.consumer.requests.*;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -48,29 +44,18 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private final ConsumerProvider provider = new ConsumerProvider();
 
+//region Overrides
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof RequestBearer bearer && bearer.request() instanceof ConsumerRequest) {
             try {
                 processRequest(ctx, bearer);
-            } catch (NotFoundException e) {
-                HttpUtils.writeNotFoundAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (BadRequestException e) {
-                HttpUtils.writeBadRequestAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (UnauthenticatedException e) {
-                HttpUtils.writeUnauthorizedAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (UnauthorizedException e) {
-                HttpUtils.writeForbiddenAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (AuthenticationException e) {
-                HttpUtils.writeUnauthorizedAndClose(ctx, bearer.protocolVersion(), e.getMessage());
-            } catch (AuthorizationException e) {
-                HttpUtils.writeForbiddenAndClose(ctx, bearer.protocolVersion(), e.getMessage());
-            } catch (InvalidTopicException | InvalidOffsetException | IllegalArgumentException | IllegalStateException |
-                     ArithmeticException e) {
-                HttpUtils.writeBadRequestAndClose(ctx, bearer.protocolVersion(), e.getMessage());
             } catch (Exception e) {
-                logger.error("An unexpected error occurred while processing consumer request.", e);
-                HttpUtils.writeInternalServerErrorAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
+                if (!handleError(ctx, bearer, e)) {
+                    logger.error("An unexpected error occurred while processing consumer request.", e);
+                    HttpUtils.writeInternalServerErrorAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
+                }
             } finally {
                 ReferenceCountUtil.release(msg);
             }
@@ -89,6 +74,10 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         logger.error("An error occurred while processing consumer request.", cause);
         ctx.close();
     }
+
+//endregion
+
+//region Management
 
     private void processList(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var wrappers = provider.getItems();
@@ -120,6 +109,8 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
+
+//endregion
 
     private void processPoll(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var request = (ConsumerPollRequest) requestBearer.request();
@@ -194,7 +185,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
-    private void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
+    private void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var requestClass = requestBearer.request().getClass();
         if (requestClass == ConsumerPollRequest.class)
             processPoll(ctx, requestBearer);
@@ -327,5 +318,18 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var response = ConsumerResponseMapper.mapTopicsResponse(topics);
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.OK, response);
         ctx.writeAndFlush(responseBearer);
+    }
+
+    private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
+        var handled = true;
+        if (error instanceof CompletionException)
+            handled = handleError(ctx, requestBearer, error.getCause());
+        else if (error instanceof InvalidOffsetException e)
+            HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), Utils.combineErrorMessage(e));
+        else if (!CommonErrors.handle(ctx, requestBearer, error))
+            handled = false;
+        else
+            handled = false;
+        return handled;
     }
 }

@@ -20,9 +20,11 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.*;
+import org.apache.kafka.common.GroupState;
+import org.apache.kafka.common.GroupType;
+import org.apache.kafka.common.IsolationLevel;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.errors.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.admin.requests.*;
@@ -30,8 +32,6 @@ import pro.savel.kafka.admin.responses.*;
 import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.NotFoundException;
-import pro.savel.kafka.common.exceptions.UnauthenticatedException;
-import pro.savel.kafka.common.exceptions.UnauthorizedException;
 
 import java.util.*;
 import java.util.concurrent.CompletionException;
@@ -52,17 +52,11 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         if (msg instanceof RequestBearer bearer && bearer.request() instanceof AdminRequest) {
             try {
                 processRequest(ctx, bearer);
-            } catch (NotFoundException e) {
-                HttpUtils.writeNotFoundAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (BadRequestException e) {
-                HttpUtils.writeBadRequestAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (UnauthenticatedException e) {
-                HttpUtils.writeUnauthorizedAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (UnauthorizedException e) {
-                HttpUtils.writeForbiddenAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
             } catch (Exception e) {
-                logger.error("An unexpected error occurred while processing admin request.", e);
-                HttpUtils.writeInternalServerErrorAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
+                if (!handleError(ctx, bearer, e)) {
+                    logger.error("An unexpected error occurred while processing admin request.", e);
+                    HttpUtils.writeInternalServerErrorAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
+                }
             } finally {
                 ReferenceCountUtil.release(msg);
             }
@@ -84,7 +78,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
 //endregion
 
-    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
+    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var requestClass = requestBearer.request().getClass();
         if (requestClass == AdminDescribeTopicRequest.class)
             processDescribeTopic(ctx, requestBearer);
@@ -261,9 +255,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
     }
 
     private static void processDescribeClusterError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
-        if (error instanceof SaslAuthenticationException)
-            HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-        else {
+        if (!handleError(ctx, requestBearer, error)) {
             logger.error("Unable to get cluster description.", error);
             HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
         }
@@ -283,7 +275,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var response = AdminResponseMapper.mapListTopicsResponse(listings);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get topic listings.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -306,7 +298,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     var response = AdminResponseMapper.mapDescribeTopicResponse(topicDescription);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                 }
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get topic description.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -321,11 +313,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var newTopic = new NewTopic(request.getTopicName(), Optional.ofNullable(request.getNumPartitions()), Optional.ofNullable(request.getReplicationFactor()));
         var createResult = admin.createTopics(Collections.singleton(newTopic));
         createResult.all().whenComplete((topics, error) -> {
-            if (error == null) {
+            if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            } else if (error instanceof TopicExistsException) {
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            } else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to create topic.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -340,9 +330,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var topics = Collections.singleton(request.getTopicName());
         var deleteResult = admin.deleteTopics(topics);
         deleteResult.all().whenComplete((ignore, error) -> {
-            if (error == null) {
+            if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            } else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete topic.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -357,9 +347,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var topics = request.getTopicNames();
         var deleteResult = admin.deleteTopics(topics);
         deleteResult.all().whenComplete((ignore, error) -> {
-            if (error == null) {
+            if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            } else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete topics.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -376,21 +366,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         createResult.all().whenComplete((topics, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof AuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error.getCause() instanceof AuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getCause().getMessage());
-            else if (error instanceof TimeoutException)
-                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof ReassignmentInProgressException)
-                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof BrokerNotAvailableException)
-                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof InvalidReplicationFactorException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof KafkaException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to create partitions.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -431,15 +407,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     AdminConfigResponse response = AdminResponseMapper.mapConfigResponse(config);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                 });
-            } else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error.getCause() instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getCause().getMessage());
-            else if (error instanceof TopicAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error.getCause() instanceof TopicAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getCause().getMessage());
-            else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get broker config description.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -478,17 +446,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, null);
                 ctx.writeAndFlush(responseBearer);
-            } else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof TopicAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnknownTopicOrPartitionException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof InvalidRequestException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof InvalidConfigurationException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to alter topic config.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -509,13 +467,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var response = AdminResponseMapper.mapDescribeUserScramCredentialsResponse(descriptions);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
-            } else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof ResourceNotFoundException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof DuplicateResourceException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to describe user SCRAM credentials.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -548,18 +500,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var responseBearer = new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, null);
                 ctx.writeAndFlush(responseBearer);
-            } else if (error instanceof NotControllerException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnsupportedByAuthenticationException)
-                HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnsupportedSaslMechanismException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof UnacceptableCredentialException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
-                logger.error("Unable to upsert user SCRAM credentials.", error);
+            } else if (!handleError(ctx, requestBearer, error)) {
+                logger.error("Unable to alter user SCRAM credentials.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
         });
@@ -580,9 +522,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var response = AdminResponseMapper.mapDescribeAclsResponse(aclBindings);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
-            } else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to describe ACLs.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -599,9 +539,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         createAclsResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof InvalidRequestException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to create ACLs.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -618,9 +556,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         createAclsResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof InvalidRequestException)
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete ACLs.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -642,11 +578,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var response = AdminResponseMapper.mapDescribeProducerResponse(producerStates);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
-            } else if (error instanceof ClusterAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof TopicAuthorizationException)
-                HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to describe producers.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -696,7 +628,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var response = AdminListGroupsResponse.map(groupListings);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get group listings.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -724,7 +656,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get classic group description.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -752,7 +684,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get consumer group description.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -780,7 +712,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get share group description.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -808,7 +740,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get streams group description.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -836,7 +768,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to list consumer group offsets.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -854,11 +786,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         alterResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupSubscribedToTopicException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else if (error instanceof CompletionException && error.getCause() instanceof UnknownMemberIdException e)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), e.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to alter consumer group offsets.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -876,9 +804,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupSubscribedToTopicException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete consumer group offsets.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -905,11 +831,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             options.reason(request.getReason());
         var removeResult = admin.removeMembersFromConsumerGroup(groupId, options);
         removeResult.all().whenComplete((ignore, error) -> {
-            if (error == null) {
+            if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            } else if (error instanceof UnknownMemberIdException exception) {
-                HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
-            } else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to remove members from consumer group.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -926,9 +850,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupNotEmptyException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete consumer group.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -945,9 +867,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupNotEmptyException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete consumer groups.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -964,9 +884,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupNotEmptyException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete share group.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -983,9 +901,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupNotEmptyException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete share groups.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -1002,9 +918,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupNotEmptyException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete streams group.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -1021,9 +935,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         deleteResult.all().whenComplete((ignore, error) -> {
             if (error == null)
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null));
-            else if (error instanceof GroupNotEmptyException)
-                HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
-            else {
+            else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to delete streams groups.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -1091,7 +1003,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             if (error == null) {
                 var response = AdminListOffsetsResponse.map(offsets);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
-            } else {
+            } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to list offsets.", error);
                 HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
             }
@@ -1099,4 +1011,13 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
     }
 
 // endregion
+
+    private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
+        var handled = true;
+        if (error instanceof CompletionException)
+            handled = handleError(ctx, requestBearer, error.getCause());
+        else if (!CommonErrors.handle(ctx, requestBearer, error))
+            handled = false;
+        return handled;
+    }
 }

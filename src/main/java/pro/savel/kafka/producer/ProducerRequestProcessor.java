@@ -22,24 +22,14 @@ import io.netty.util.ReferenceCountUtil;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.errors.AuthenticationException;
-import org.apache.kafka.common.errors.AuthorizationException;
-import org.apache.kafka.common.errors.InvalidTopicException;
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.savel.kafka.common.HttpUtils;
-import pro.savel.kafka.common.NettyAttributes;
-import pro.savel.kafka.common.RequestBearer;
-import pro.savel.kafka.common.Utils;
+import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.NotFoundException;
-import pro.savel.kafka.common.exceptions.UnauthenticatedException;
-import pro.savel.kafka.common.exceptions.UnauthorizedException;
 import pro.savel.kafka.producer.requests.*;
 
-import java.util.List;
+import java.util.concurrent.CompletionException;
 
 @ChannelHandler.Sharable
 public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter implements AutoCloseable {
@@ -48,22 +38,18 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private final ProducerProvider provider = new ProducerProvider();
 
+//region Overrides
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof RequestBearer bearer && bearer.request() instanceof ProducerRequest) {
             try {
                 processRequest(ctx, bearer);
-            } catch (NotFoundException e) {
-                HttpUtils.writeNotFoundAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (BadRequestException e) {
-                HttpUtils.writeBadRequestAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (UnauthenticatedException e) {
-                HttpUtils.writeUnauthorizedAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
-            } catch (UnauthorizedException e) {
-                HttpUtils.writeForbiddenAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
             } catch (Exception e) {
-                logger.error("An unexpected error occurred while processing producer request.", e);
-                HttpUtils.writeInternalServerErrorAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
+                if (!handleError(ctx, bearer, e)) {
+                    logger.error("An unexpected error occurred while processing producer request.", e);
+                    HttpUtils.writeInternalServerErrorAndClose(ctx, bearer.protocolVersion(), Utils.combineErrorMessage(e));
+                }
             } finally {
                 ReferenceCountUtil.release(msg);
             }
@@ -73,20 +59,37 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
     }
 
     @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        logger.error("An error occurred while processing producer request.", cause);
+        ctx.close();
+    }
+
+    @Override
     public void close() {
         provider.close();
     }
 
-    private static List<PartitionInfo> getPartitions(ProducerWrapper wrapper, ProducerGetPartitionsRequest request) throws UnauthenticatedException, UnauthorizedException {
-        var producer = wrapper.getProducer();
-        try {
-            return producer.partitionsFor(request.getTopic());
-        } catch (AuthenticationException e) {
-            throw new UnauthenticatedException("Unable to get partitions.", e);
-        } catch (AuthorizationException e) {
-            throw new UnauthorizedException("Unable to get partitions.", e);
-        }
+//endregion
+
+    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
+        var requestClass = requestBearer.request().getClass();
+        if (requestClass == ProducerSendRequest.class)
+            processSend(ctx, requestBearer);
+        else if (requestClass == ProducerGetPartitionsRequest.class)
+            processGetPartitions(ctx, requestBearer);
+        else if (requestClass == ProducerCreateRequest.class)
+            processCreate(ctx, requestBearer);
+        else if (requestClass == ProducerRemoveRequest.class)
+            processRemove(ctx, requestBearer);
+        else if (requestClass == ProducerTouchRequest.class)
+            processTouch(ctx, requestBearer);
+        else if (requestClass == ProducerListRequest.class)
+            processList(ctx, requestBearer);
+        else
+            throw new RuntimeException("Unexpected producer request type: " + requestClass.getName());
     }
+
+//region Management
 
     private void processList(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var wrappers = provider.getItems();
@@ -119,6 +122,8 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         ctx.writeAndFlush(responseBearer);
     }
 
+//endregion
+
     private void processSend(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var request = (ProducerSendRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
@@ -131,19 +136,10 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
                 }
                 if (exception == null) {
                     var response = ProducerResponseMapper.mapSendResponse(metadata);
-                    var responseBearer = new ProducerResponseBearer(requestBearer, HttpResponseStatus.CREATED, response);
-                    ctx.writeAndFlush(responseBearer);
-                } else {
-                    if (exception instanceof InvalidTopicException || exception instanceof UnknownTopicOrPartitionException)
-                        HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
-                    else if (exception instanceof AuthenticationException)
-                        HttpUtils.writeUnauthorizedAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
-                    else if (exception instanceof AuthorizationException)
-                        HttpUtils.writeForbiddenAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
-                    else {
-                        logger.error("Unable to produce message.", exception);
-                        HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
-                    }
+                    ctx.writeAndFlush(new ProducerResponseBearer(requestBearer, HttpResponseStatus.CREATED, response));
+                } else if (!handleError(ctx, requestBearer, exception)) {
+                    logger.error("Unable to produce message.", exception);
+                    HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), exception.getMessage());
                 }
             }
         };
@@ -156,31 +152,23 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         producer.send(record, callback);
     }
 
-    public void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
-        var requestClass = requestBearer.request().getClass();
-        if (requestClass == ProducerSendRequest.class)
-            processSend(ctx, requestBearer);
-        else if (requestClass == ProducerGetPartitionsRequest.class)
-            processGetPartitions(ctx, requestBearer);
-        else if (requestClass == ProducerCreateRequest.class)
-            processCreate(ctx, requestBearer);
-        else if (requestClass == ProducerRemoveRequest.class)
-            processRemove(ctx, requestBearer);
-        else if (requestClass == ProducerTouchRequest.class)
-            processTouch(ctx, requestBearer);
-        else if (requestClass == ProducerListRequest.class)
-            processList(ctx, requestBearer);
-        else
-            throw new RuntimeException("Unexpected producer request type: " + requestClass.getName());
-    }
-
-    private void processGetPartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException, UnauthenticatedException, UnauthorizedException {
+    private void processGetPartitions(ChannelHandlerContext ctx, RequestBearer requestBearer) throws NotFoundException, BadRequestException {
         var request = (ProducerGetPartitionsRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
         wrapper.touch();
-        var partitions = getPartitions(wrapper, request);
+        var producer = wrapper.getProducer();
+        var partitions = producer.partitionsFor(request.getTopic());
         var response = ProducerResponseMapper.mapPartitionsResponse(partitions);
         var responseBearer = new ProducerResponseBearer(requestBearer, HttpResponseStatus.OK, response);
         ctx.writeAndFlush(responseBearer);
+    }
+
+    private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
+        var handled = true;
+        if (error instanceof CompletionException)
+            handled = handleError(ctx, requestBearer, error.getCause());
+        else if (!CommonErrors.handle(ctx, requestBearer, error))
+            handled = false;
+        return handled;
     }
 }
