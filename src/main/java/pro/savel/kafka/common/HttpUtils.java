@@ -47,11 +47,11 @@ public abstract class HttpUtils {
     }
 
     public static boolean isJson(String contentType) {
-        return APPLICATION_JSON.equals(contentType) || APPLICATION_JSON_CHARSET_UTF8.equals(contentType);
+        return APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_JSON_CHARSET_UTF8.equalsIgnoreCase(contentType);
     }
 
     public static boolean isOctetStream(String contentType) {
-        return APPLICATION_OCTET_STREAM.equals(contentType);
+        return APPLICATION_OCTET_STREAM.equalsIgnoreCase(contentType);
     }
 
     public static void writeOkAndClose(ChannelHandlerContext ctx, HttpVersion version, String message) {
