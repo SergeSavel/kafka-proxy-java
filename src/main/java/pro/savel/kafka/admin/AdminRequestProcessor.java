@@ -304,7 +304,17 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
         var admin = wrapper.getAdmin();
-        var describeResult = admin.describeTopics(Collections.singleton(request.getTopic()));
+        var options = new DescribeTopicsOptions();
+        if (request.getIncludeAuthorizedOperations() != null)
+            options = options.includeAuthorizedOperations(request.getIncludeAuthorizedOperations());
+        TopicCollection topicCollection;
+        if (request.getTopicId() != null)
+            topicCollection = TopicCollection.ofTopicIds(Collections.singleton(request.getTopicId()));
+        else if (request.getTopicName() != null)
+            topicCollection = TopicCollection.ofTopicNames(Collections.singleton(request.getTopicName()));
+        else
+            throw new IllegalArgumentException("Topic name or id must be specified");
+        var describeResult = admin.describeTopics(topicCollection, options);
         describeResult.allTopicNames().whenComplete((topicNames, error) -> {
             if (error == null) {
                 if (topicNames.isEmpty()) {

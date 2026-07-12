@@ -15,10 +15,13 @@
 package pro.savel.kafka.admin.requests.topic;
 
 import lombok.Data;
+import org.apache.kafka.common.Uuid;
 
 @Data
 public class AdminDescribeTopicRequest implements AdminTopicRequest {
     private String adminId;
     private String token;
-    private String topic;
+    private String topicName;
+    private Uuid topicId;
+    private Boolean includeAuthorizedOperations;
 }
