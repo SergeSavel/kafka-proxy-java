@@ -20,6 +20,6 @@ import lombok.Data;
 public class AdminDescribeClassicGroupRequest implements AdminRequest {
     private String adminId;
     private String token;
-    String groupId;
-    Boolean includeAuthorizedOperations;
+    private String groupId;
+    private Boolean includeAuthorizedOperations;
 }

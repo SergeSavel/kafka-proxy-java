@@ -20,6 +20,6 @@ import lombok.Data;
 public class AdminListConsumerGroupOffsetsRequest implements AdminRequest {
     private String adminId;
     private String token;
-    String groupId;
-    Boolean requireStable;
+    private String groupId;
+    private Boolean requireStable;
 }

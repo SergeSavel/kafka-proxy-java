@@ -22,7 +22,7 @@ import java.util.Collection;
 public class AdminListGroupsRequest implements AdminRequest {
     private String adminId;
     private String token;
-    Collection<String> withTypes;
-    Collection<String> withProtocolTypes;
-    Collection<String> inStates;
+    private Collection<String> withTypes;
+    private Collection<String> withProtocolTypes;
+    private Collection<String> inStates;
 }

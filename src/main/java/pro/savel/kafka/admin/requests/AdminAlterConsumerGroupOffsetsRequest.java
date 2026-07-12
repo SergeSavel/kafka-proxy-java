@@ -24,13 +24,13 @@ public class AdminAlterConsumerGroupOffsetsRequest implements AdminRequest {
     private String adminId;
     private String token;
     private String groupId;
-    Collection<TopicPartitionOffsetMetadata> offsets;
+    private Collection<TopicPartitionOffsetMetadata> offsets;
 
     @Data
     public static class TopicPartitionOffsetMetadata {
-        String topic;
-        int partition;
-        long offset;
-        String metadata;
+        private String topic;
+        private int partition;
+        private long offset;
+        private String metadata;
     }
 }
