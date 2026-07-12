@@ -5,12 +5,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.HttpUtils;
 import pro.savel.kafka.common.Utils;
 import pro.savel.kafka.common.exceptions.BadRequestException;
+
+import java.nio.charset.StandardCharsets;
 
 @ChannelHandler.Sharable
 public class VersionRequestDecoder extends ChannelInboundHandlerAdapter {
@@ -37,7 +40,8 @@ public class VersionRequestDecoder extends ChannelInboundHandlerAdapter {
     }
 
     private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
-        var pathMethod = httpRequest.uri().substring(URI_PREFIX.length());
+        var decoder = new QueryStringDecoder(httpRequest.uri(), StandardCharsets.UTF_8, true, 0);
+        var pathMethod = decoder.path().substring(URI_PREFIX.length());
         if (pathMethod.isEmpty()) {
             decodeRoot(ctx, httpRequest);
         } else {
