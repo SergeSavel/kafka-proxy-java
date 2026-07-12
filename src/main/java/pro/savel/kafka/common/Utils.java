@@ -5,17 +5,18 @@ public abstract class Utils {
     public static String combineErrorMessage(Throwable throwable) {
         if (throwable == null)
             return null;
-        var message = throwable.getMessage();
-        var cause = throwable.getCause();
-        if (cause == null)
-            return message;
-        var builder = new StringBuilder(message.length());
-        builder.append(message);
-        while (cause != null) {
-            builder.append("\n");
-            builder.append(cause.getMessage());
-            cause = cause.getCause();
+        var builder = new StringBuilder();
+        while (throwable != null) {
+            var message = throwable.getMessage();
+            if (message != null) {
+                if (!builder.isEmpty())
+                    builder.append("\n");
+                builder.append(message);
+            }
+            throwable = throwable.getCause();
         }
+        if (builder.isEmpty())
+            return null;
         return builder.toString();
     }
 }
