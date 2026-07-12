@@ -1001,8 +1001,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var admin = wrapper.getAdmin();
         var topicPartitionOffsets = request.getPartitions().stream()
                 .collect(Collectors.toMap(topicPartition -> new TopicPartition(topicPartition.topic(), topicPartition.partition()), topicPartition -> offsetSpec));
-        ListOffsetsOptions options = null;
-        if (request.getIsolationLevel() != null) {
+        ListOffsetsOptions options;
+        if (request.getIsolationLevel() != null)
             try {
                 var isolationLevel = IsolationLevel.valueOf(request.getIsolationLevel());
                 options = new ListOffsetsOptions(isolationLevel);
@@ -1010,12 +1010,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                 HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), e.getMessage());
                 return;
             }
-        }
-        ListOffsetsResult listOffsetsResult;
-        if (options == null)
-            listOffsetsResult = admin.listOffsets(topicPartitionOffsets);
         else
-            listOffsetsResult = admin.listOffsets(topicPartitionOffsets, options);
+            options = new ListOffsetsOptions();
+        var listOffsetsResult = admin.listOffsets(topicPartitionOffsets, options);
         listOffsetsResult.all().whenComplete((offsets, error) -> {
             if (error == null) {
                 var response = AdminListOffsetsResponse.map(offsets);
