@@ -20,6 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,8 @@ import pro.savel.kafka.common.RequestBearer;
 import pro.savel.kafka.common.Utils;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 import pro.savel.kafka.common.exceptions.MethodNotAllowedException;
+
+import java.nio.charset.StandardCharsets;
 
 @ChannelHandler.Sharable
 public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
@@ -68,7 +71,8 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     }
 
     private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
-        var pathMethod = httpRequest.uri().substring(URI_PREFIX.length());
+        var decoder = new QueryStringDecoder(httpRequest.uri(), StandardCharsets.UTF_8, true, 0);
+        var pathMethod = decoder.path().substring(URI_PREFIX.length());
         switch (pathMethod) {
             case "/describe-topic" -> decodeDescribeTopic(ctx, httpRequest);
             case "/list-topics" -> decodeListTopics(ctx, httpRequest);
