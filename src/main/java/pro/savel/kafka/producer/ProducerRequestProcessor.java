@@ -122,6 +122,8 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
 //endregion
 
+//region Producer
+
     private void processSend(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ProducerSendRequest) requestBearer.request();
         var wrapper = provider.getProducer(request.getProducerId(), request.getToken());
@@ -160,6 +162,8 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var responseBearer = new ProducerResponseBearer(requestBearer, HttpResponseStatus.OK, response);
         ctx.writeAndFlush(responseBearer);
     }
+
+//endregion
 
     private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
         var handled = true;

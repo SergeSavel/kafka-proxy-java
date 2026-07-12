@@ -76,6 +76,44 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
 //endregion
 
+    private void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
+        var requestClass = requestBearer.request().getClass();
+        if (requestClass == ConsumerPollRequest.class)
+            processPoll(ctx, requestBearer);
+        else if (requestClass == ConsumerCommitRequest.class)
+            processCommit(ctx, requestBearer);
+        else if (requestClass == ConsumerSeekRequest.class)
+            processSeek(ctx, requestBearer);
+        else if (requestClass == ConsumerListPartitionsRequest.class)
+            processListPartitions(ctx, requestBearer);
+        else if (requestClass == ConsumerAssignRequest.class)
+            processAssign(ctx, requestBearer);
+        else if (requestClass == ConsumerSubscribeRequest.class)
+            processSubscribe(ctx, requestBearer);
+        else if (requestClass == ConsumerGetBeginningOffsetsRequest.class)
+            processGetBeginningOffsets(ctx, requestBearer);
+        else if (requestClass == ConsumerGetEndOffsetsRequest.class)
+            processGetEndOffsets(ctx, requestBearer);
+        else if (requestClass == ConsumerListTopicsRequest.class)
+            processListTopics(ctx, requestBearer);
+        else if (requestClass == ConsumerGetPositionRequest.class)
+            processGetPosition(ctx, requestBearer);
+        else if (requestClass == ConsumerGetAssignmentRequest.class)
+            processGetAssignment(ctx, requestBearer);
+        else if (requestClass == ConsumerGetSubscriptionRequest.class)
+            processGetSubscription(ctx, requestBearer);
+        else if (requestClass == ConsumerCreateRequest.class)
+            processCreate(ctx, requestBearer);
+        else if (requestClass == ConsumerReleaseRequest.class)
+            processRemove(ctx, requestBearer);
+        else if (requestClass == ConsumerListRequest.class)
+            processList(ctx, requestBearer);
+        else if (requestClass == ConsumerTouchRequest.class)
+            processTouch(ctx, requestBearer);
+        else
+            throw new RuntimeException("Unexpected consumer request type: " + requestClass.getName());
+    }
+
 //region Management
 
     private void processList(ChannelHandlerContext ctx, RequestBearer requestBearer) {
@@ -110,6 +148,8 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
     }
 
 //endregion
+
+//region Consumer
 
     private void processPoll(ChannelHandlerContext ctx, RequestBearer requestBearer) {
         var request = (ConsumerPollRequest) requestBearer.request();
@@ -174,44 +214,6 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         consumer.seek(topicPartition, request.getOffset());
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
-    }
-
-    private void processRequest(ChannelHandlerContext ctx, RequestBearer requestBearer) {
-        var requestClass = requestBearer.request().getClass();
-        if (requestClass == ConsumerPollRequest.class)
-            processPoll(ctx, requestBearer);
-        else if (requestClass == ConsumerCommitRequest.class)
-            processCommit(ctx, requestBearer);
-        else if (requestClass == ConsumerSeekRequest.class)
-            processSeek(ctx, requestBearer);
-        else if (requestClass == ConsumerListPartitionsRequest.class)
-            processListPartitions(ctx, requestBearer);
-        else if (requestClass == ConsumerAssignRequest.class)
-            processAssign(ctx, requestBearer);
-        else if (requestClass == ConsumerSubscribeRequest.class)
-            processSubscribe(ctx, requestBearer);
-        else if (requestClass == ConsumerGetBeginningOffsetsRequest.class)
-            processGetBeginningOffsets(ctx, requestBearer);
-        else if (requestClass == ConsumerGetEndOffsetsRequest.class)
-            processGetEndOffsets(ctx, requestBearer);
-        else if (requestClass == ConsumerListTopicsRequest.class)
-            processListTopics(ctx, requestBearer);
-        else if (requestClass == ConsumerGetPositionRequest.class)
-            processGetPosition(ctx, requestBearer);
-        else if (requestClass == ConsumerGetAssignmentRequest.class)
-            processGetAssignment(ctx, requestBearer);
-        else if (requestClass == ConsumerGetSubscriptionRequest.class)
-            processGetSubscription(ctx, requestBearer);
-        else if (requestClass == ConsumerCreateRequest.class)
-            processCreate(ctx, requestBearer);
-        else if (requestClass == ConsumerReleaseRequest.class)
-            processRemove(ctx, requestBearer);
-        else if (requestClass == ConsumerListRequest.class)
-            processList(ctx, requestBearer);
-        else if (requestClass == ConsumerTouchRequest.class)
-            processTouch(ctx, requestBearer);
-        else
-            throw new RuntimeException("Unexpected consumer request type: " + requestClass.getName());
     }
 
     private void processSubscribe(ChannelHandlerContext ctx, RequestBearer requestBearer) {
@@ -306,6 +308,8 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.OK, response);
         ctx.writeAndFlush(responseBearer);
     }
+
+//endregion
 
     private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
         var handled = true;
