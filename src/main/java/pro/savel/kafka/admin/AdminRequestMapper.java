@@ -23,7 +23,7 @@ import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.resource.ResourceType;
 import pro.savel.kafka.admin.data.AdminAclBinding;
 import pro.savel.kafka.admin.data.AdminAclBindingFilter;
-import pro.savel.kafka.admin.requests.AdminAlterConsumerGroupOffsetsRequest;
+import pro.savel.kafka.admin.requests.group.AdminAlterConsumerGroupOffsetsRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
