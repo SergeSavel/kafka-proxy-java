@@ -223,10 +223,11 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         var consumer = wrapper.getConsumer();
         if (request.getTopics() != null)
             consumer.subscribe(request.getTopics());
-        else {
+        else if (request.getPattern() != null) {
             var pattern = new SubscriptionPattern(request.getPattern());
             consumer.subscribe(pattern);
-        }
+        } else
+            throw new IllegalArgumentException("Topic list or pattern be specified");
         var responseBearer = new ConsumerResponseBearer(requestBearer, HttpResponseStatus.NO_CONTENT, null);
         ctx.writeAndFlush(responseBearer);
     }
