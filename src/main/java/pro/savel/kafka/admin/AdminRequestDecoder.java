@@ -90,7 +90,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     }
 
     private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
-        var decoder = new QueryStringDecoder(httpRequest.uri(), StandardCharsets.UTF_8, true, 0);
+        var decoder = new QueryStringDecoder(httpRequest.uri(), StandardCharsets.UTF_8, true);
         var pathMethod = decoder.path().substring(URI_PREFIX.length());
         switch (pathMethod) {
             case "/describe-topic" -> decodeDescribeTopic(ctx, httpRequest);

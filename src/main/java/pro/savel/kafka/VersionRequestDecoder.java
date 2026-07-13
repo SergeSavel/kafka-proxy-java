@@ -40,7 +40,7 @@ public class VersionRequestDecoder extends ChannelInboundHandlerAdapter {
     }
 
     private void decode(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException {
-        var decoder = new QueryStringDecoder(httpRequest.uri(), StandardCharsets.UTF_8, true, 0);
+        var decoder = new QueryStringDecoder(httpRequest.uri(), StandardCharsets.UTF_8, true);
         var pathMethod = decoder.path().substring(URI_PREFIX.length());
         if (pathMethod.isEmpty()) {
             decodeRoot(ctx, httpRequest);
