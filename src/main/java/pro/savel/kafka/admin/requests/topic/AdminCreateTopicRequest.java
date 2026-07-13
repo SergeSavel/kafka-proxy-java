@@ -14,13 +14,20 @@
 
 package pro.savel.kafka.admin.requests.topic;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
 public class AdminCreateTopicRequest implements AdminTopicRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String topicName;
+    @Positive
     private Integer numPartitions;
+    @Positive
     private Short replicationFactor;
 }

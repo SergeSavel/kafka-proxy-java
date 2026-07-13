@@ -14,14 +14,21 @@
 
 package pro.savel.kafka.admin.requests.scram;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class AdminUpsertUserScramCredentialsRequest implements AdminScramRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String user;
+    @NotEmpty
     private String mechanism;
+    @NotNull
     private String password;
     private Integer iterations;
 }

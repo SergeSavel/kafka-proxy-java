@@ -14,13 +14,19 @@
 
 package pro.savel.kafka.admin.requests.management;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.util.Properties;
 
 @Data
 public class AdminCreateRequest implements AdminManageRequest {
+    @NotBlank
     private String name;
+    @NotEmpty
     private Properties config;
+    @Positive
     private int expirationTimeout;
 }

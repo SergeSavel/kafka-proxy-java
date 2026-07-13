@@ -22,6 +22,8 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.util.ReferenceCountUtil;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.admin.requests.AdminRequest;
@@ -59,9 +61,11 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
     public static final String URI_PREFIX = "/admin";
     private static final Logger logger = LoggerFactory.getLogger(AdminRequestDecoder.class);
     private final ObjectMapper objectMapper;
+    private final Validator validator;
 
-    public AdminRequestDecoder(ObjectMapper objectMapper) {
+    public AdminRequestDecoder(ObjectMapper objectMapper, ValidatorFactory validatorFactory) {
         this.objectMapper = objectMapper;
+        this.validator = validatorFactory == null ? null : validatorFactory.getValidator();
     }
 
     private static void passBearer(ChannelHandlerContext ctx, FullHttpRequest httpRequest, AdminRequest request) {
@@ -150,7 +154,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeCreate(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminCreateRequest.class);
+            decodeRequest(ctx, httpRequest, AdminCreateRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -158,7 +162,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeRemove(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminRemoveRequest.class);
+            decodeRequest(ctx, httpRequest, AdminRemoveRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -166,7 +170,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeTouch(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminTouchRequest.class);
+            decodeRequest(ctx, httpRequest, AdminTouchRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -174,7 +178,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeCluster(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeClusterRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeClusterRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -182,7 +186,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListTopicsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListTopicsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -190,7 +194,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeCreateTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminCreateTopicRequest.class);
+            decodeRequest(ctx, httpRequest, AdminCreateTopicRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -198,7 +202,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteTopicRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -206,7 +210,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteTopics(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteTopicsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -214,7 +218,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeTopic(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeTopicRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeTopicRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -222,7 +226,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeBrokerConfigs(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeBrokerConfigsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeBrokerConfigsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -230,7 +234,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeTopicConfigs(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeTopicConfigsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeTopicConfigsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -238,7 +242,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeSetTopicConfig(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminSetTopicConfigRequest.class);
+            decodeRequest(ctx, httpRequest, AdminSetTopicConfigRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -246,7 +250,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteTopicConfig(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteTopicConfigRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteTopicConfigRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -254,7 +258,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeUserScramCredentialsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeUserScramCredentialsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -262,7 +266,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeUpsertUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminUpsertUserScramCredentialsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminUpsertUserScramCredentialsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -270,7 +274,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteUserScramCredentials(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteUserScramCredentialsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteUserScramCredentialsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -278,7 +282,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeAclsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeAclsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -286,7 +290,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeCreateAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminCreateAclsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminCreateAclsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -294,7 +298,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteAcls(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteAclsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteAclsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -302,7 +306,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeCreatePartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminCreatePartitionsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminCreatePartitionsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -310,7 +314,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeProducers(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeProducersRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeProducersRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -318,7 +322,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListGroupsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListGroupsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -326,7 +330,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeClassicGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeClassicGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeClassicGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -334,7 +338,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeConsumerGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeConsumerGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -342,7 +346,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeShareGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeShareGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -350,7 +354,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDescribeStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDescribeStreamsGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDescribeStreamsGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -358,7 +362,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListConsumerGroupOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListConsumerGroupOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -366,7 +370,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeAlterConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminAlterConsumerGroupOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminAlterConsumerGroupOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -374,7 +378,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteConsumerGroupOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteConsumerGroupOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -382,7 +386,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeRemoveMembersFromConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminRemoveMembersFromConsumerGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminRemoveMembersFromConsumerGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -390,7 +394,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteConsumerGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteConsumerGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -398,7 +402,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteConsumerGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteConsumerGroupsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteConsumerGroupsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -406,7 +410,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteShareGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteShareGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteShareGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -414,7 +418,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteShareGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteShareGroupsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteShareGroupsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -422,7 +426,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteStreamsGroup(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteStreamsGroupRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -430,7 +434,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeDeleteStreamsGroups(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminDeleteStreamsGroupsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminDeleteStreamsGroupsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -438,7 +442,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListEarliestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListEarliestOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListEarliestOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -446,7 +450,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListEarliestLocalOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListEarliestLocalOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListEarliestLocalOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -454,7 +458,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListLatestOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListLatestOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListLatestOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -462,7 +466,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListLatestTieredOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListLatestTieredOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListLatestTieredOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -470,7 +474,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListMaxTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListMaxTimestampOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListMaxTimestampOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -478,7 +482,7 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeListTimestampOffsets(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, AdminListTimestampOffsetsRequest.class);
+            decodeRequest(ctx, httpRequest, AdminListTimestampOffsetsRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -490,13 +494,20 @@ public class AdminRequestDecoder extends ChannelInboundHandlerAdapter {
         ctx.fireChannelRead(bearer);
     }
 
-    private <T extends AdminRequest> void decodeJsonRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest, Class<T> clazz) throws BadRequestException {
+    private <T extends AdminRequest> void decodeRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest, Class<T> clazz) throws BadRequestException {
         var contentType = HttpUtils.getContentType(httpRequest);
         T request;
         if (HttpUtils.isJson(contentType))
             request = JsonUtils.parseJson(objectMapper, httpRequest.content(), clazz);
         else
             throw new BadRequestException("Invalid Content-Type header in request.");
+        if (validator != null) {
+            var violations = validator.validate(request);
+            if (!violations.isEmpty()) {
+                HttpUtils.writeBadRequestAndClose(ctx, httpRequest.protocolVersion(), Utils.combineConstraintViolationMessage(violations));
+                return;
+            }
+        }
         passBearer(ctx, httpRequest, request);
     }
 

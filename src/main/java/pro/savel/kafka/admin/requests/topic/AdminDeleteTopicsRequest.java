@@ -14,13 +14,17 @@
 
 package pro.savel.kafka.admin.requests.topic;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.Collection;
 
 @Data
 public class AdminDeleteTopicsRequest implements AdminTopicRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private Collection<String> topicNames;
 }

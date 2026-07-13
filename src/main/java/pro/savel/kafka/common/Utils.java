@@ -14,6 +14,10 @@
 
 package pro.savel.kafka.common;
 
+import jakarta.validation.ConstraintViolation;
+
+import java.util.Collection;
+
 public abstract class Utils {
 
     public static String combineErrorMessage(Throwable throwable) {
@@ -31,6 +35,24 @@ public abstract class Utils {
         }
         if (builder.isEmpty())
             return null;
+        return builder.toString();
+    }
+
+    public static <T> String combineConstraintViolationMessage(ConstraintViolation<T> violation) {
+        if (violation == null)
+            return null;
+        return violation.getPropertyPath() + ": " + violation.getMessage();
+    }
+
+    public static <T> String combineConstraintViolationMessage(Collection<ConstraintViolation<T>> violations) {
+        if (violations == null)
+            return null;
+        var builder = new StringBuilder();
+        for (var violation : violations) {
+            if (!builder.isEmpty())
+                builder.append("\n");
+            builder.append(combineConstraintViolationMessage(violation));
+        }
         return builder.toString();
     }
 }

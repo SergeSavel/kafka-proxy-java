@@ -14,6 +14,7 @@
 
 package pro.savel.kafka;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.netty.channel.ChannelInitializer;
@@ -21,6 +22,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import pro.savel.kafka.admin.AdminRequestDecoder;
 import pro.savel.kafka.admin.AdminRequestProcessor;
 import pro.savel.kafka.admin.AdminResponseEncoder;
@@ -33,13 +37,21 @@ import pro.savel.kafka.producer.ProducerResponseEncoder;
 
 class ServerInitializer extends ChannelInitializer<SocketChannel> implements AutoCloseable {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true)
+            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+    private static final ValidatorFactory validatorFactory = Validation.byDefaultProvider()
+            .configure()
+            .messageInterpolator(new ParameterMessageInterpolator())
+            .buildValidatorFactory();
 
     private final BasicAuthenticationHandler basicAuthenticationHandler = new BasicAuthenticationHandler(objectMapper);
 
-    private final ProducerRequestDecoder producerRequestDecoder = new ProducerRequestDecoder(objectMapper);
-    private final ConsumerRequestDecoder consumerRequestDecoder = new ConsumerRequestDecoder(objectMapper);
-    private final AdminRequestDecoder adminRequestDecoder = new AdminRequestDecoder(objectMapper);
+    private final ProducerRequestDecoder producerRequestDecoder = new ProducerRequestDecoder(objectMapper, validatorFactory);
+    private final ConsumerRequestDecoder consumerRequestDecoder = new ConsumerRequestDecoder(objectMapper, validatorFactory);
+    private final AdminRequestDecoder adminRequestDecoder = new AdminRequestDecoder(objectMapper, validatorFactory);
     private final VersionRequestDecoder versionRequestDecoder = new VersionRequestDecoder();
     private final DefaultRequestDecoder defaultRequestDecoder = new DefaultRequestDecoder();
 
@@ -52,10 +64,6 @@ class ServerInitializer extends ChannelInitializer<SocketChannel> implements Aut
     private final AdminResponseEncoder adminResponseEncoder = new AdminResponseEncoder(objectMapper);
 
     private final DefaultInboundHandler defaultInboundHandler = new DefaultInboundHandler();
-
-    static {
-        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-    }
 
     public void initialize() {
         basicAuthenticationHandler.initialize();

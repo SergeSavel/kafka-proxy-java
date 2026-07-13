@@ -14,6 +14,8 @@
 
 package pro.savel.kafka.admin.requests.group;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 import java.util.Collection;
@@ -21,15 +23,22 @@ import java.util.Collection;
 @Data
 public class AdminAlterConsumerGroupOffsetsRequest implements AdminGroupRequest {
 
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String groupId;
+    @NotEmpty
     private Collection<TopicPartitionOffsetMetadata> offsets;
 
     @Data
     public static class TopicPartitionOffsetMetadata {
+        @NotEmpty
         private String topic;
+        @PositiveOrZero
         private int partition;
+        @PositiveOrZero
         private long offset;
         private String metadata;
     }

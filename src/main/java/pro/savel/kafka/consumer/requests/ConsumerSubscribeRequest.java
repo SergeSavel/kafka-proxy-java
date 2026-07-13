@@ -14,13 +14,16 @@
 
 package pro.savel.kafka.consumer.requests;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.Collection;
 
 @Data
 public class ConsumerSubscribeRequest implements ConsumerRequest {
+    @NotEmpty
     private String consumerId;
+    @NotEmpty
     private String token;
     private Collection<String> topics;
     private String pattern;

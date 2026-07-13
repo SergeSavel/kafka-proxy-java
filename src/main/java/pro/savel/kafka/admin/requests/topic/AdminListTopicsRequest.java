@@ -14,10 +14,13 @@
 
 package pro.savel.kafka.admin.requests.topic;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class AdminListTopicsRequest implements AdminTopicRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
 }

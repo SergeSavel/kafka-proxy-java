@@ -14,11 +14,15 @@
 
 package pro.savel.kafka.producer.requests;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class ProducerGetPartitionsRequest implements ProducerRequest {
+    @NotEmpty
     private String producerId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String topic;
 }

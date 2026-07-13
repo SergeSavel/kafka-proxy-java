@@ -14,5 +14,8 @@
 
 package pro.savel.kafka.common.contract;
 
-public record TopicPartition(String topic, int partition) {
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
+
+public record TopicPartition(@NotEmpty String topic, @PositiveOrZero int partition) {
 }

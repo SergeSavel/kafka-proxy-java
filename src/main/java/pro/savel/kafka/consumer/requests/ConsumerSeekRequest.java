@@ -14,13 +14,20 @@
 
 package pro.savel.kafka.consumer.requests;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 @Data
 public class ConsumerSeekRequest implements ConsumerRequest {
+    @NotEmpty
     private String consumerId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String topic;
+    @PositiveOrZero
     private int partition;
+    @PositiveOrZero
     private long offset;
 }

@@ -14,12 +14,17 @@
 
 package pro.savel.kafka.admin.requests.scram;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class AdminDeleteUserScramCredentialsRequest implements AdminScramRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String user;
+    @NotEmpty
     private String mechanism;
 }

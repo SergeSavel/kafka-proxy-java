@@ -14,26 +14,37 @@
 
 package pro.savel.kafka.admin.data;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class AdminAclBinding {
 
+    @NotNull
     private ResourcePattern pattern;
+    @NotNull
     private AccessControlEntry entry;
 
     @Data
     public static class ResourcePattern {
+        @NotEmpty
         private String resourceType;
+        @NotNull
         private String name;
+        @NotEmpty
         private String patternType;
     }
 
     @Data
     public static class AccessControlEntry {
+        @NotNull
         private String principal;
+        @NotNull
         private String host;
+        @NotEmpty
         private String operation;
+        @NotEmpty
         private String permissionType;
     }
 }

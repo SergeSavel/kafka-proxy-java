@@ -14,10 +14,13 @@
 
 package pro.savel.kafka.admin.requests.management;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class AdminTouchRequest implements AdminManageRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
 }

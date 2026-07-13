@@ -14,11 +14,15 @@
 
 package pro.savel.kafka.admin.requests.group;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class AdminDeleteShareGroupRequest implements AdminGroupRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String groupId;
 }

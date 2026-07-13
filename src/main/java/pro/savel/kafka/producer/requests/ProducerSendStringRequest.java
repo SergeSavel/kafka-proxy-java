@@ -14,15 +14,21 @@
 
 package pro.savel.kafka.producer.requests;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 import java.util.Map;
 
 @Data
 public class ProducerSendStringRequest {
+    @NotEmpty
     private String producerId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String topic;
+    @PositiveOrZero
     private Integer partition;
     private Map<String, String> headers;
     private String key;

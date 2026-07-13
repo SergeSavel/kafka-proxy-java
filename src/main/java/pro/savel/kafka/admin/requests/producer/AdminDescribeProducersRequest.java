@@ -14,6 +14,7 @@
 
 package pro.savel.kafka.admin.requests.producer;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import pro.savel.kafka.common.contract.TopicPartition;
 
@@ -21,7 +22,10 @@ import java.util.Collection;
 
 @Data
 public class AdminDescribeProducersRequest implements AdminProducerRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private Collection<TopicPartition> partitions;
 }

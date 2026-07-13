@@ -14,11 +14,16 @@
 
 package pro.savel.kafka.admin.requests.config;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 @Data
 public class AdminDescribeBrokerConfigsRequest implements AdminConfigRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @PositiveOrZero
     private int brokerId;
 }

@@ -14,6 +14,7 @@
 
 package pro.savel.kafka.admin.requests.group;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import pro.savel.kafka.common.contract.TopicPartition;
 
@@ -21,8 +22,12 @@ import java.util.Collection;
 
 @Data
 public class AdminDeleteConsumerGroupOffsetsRequest implements AdminGroupRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private String groupId;
+    @NotEmpty
     private Collection<TopicPartition> partitions;
 }

@@ -14,18 +14,24 @@
 
 package pro.savel.kafka.admin.data;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class AdminAclBindingFilter {
 
+    @NotNull
     private ResourcePatternFilter patternFilter;
+    @NotNull
     private AccessControlEntryFilter entryFilter;
 
     @Data
     public static class ResourcePatternFilter {
+        @NotEmpty
         private String resourceType;
         private String name;
+        @NotEmpty
         private String patternType;
     }
 
@@ -33,7 +39,9 @@ public class AdminAclBindingFilter {
     public static class AccessControlEntryFilter {
         private String principal;
         private String host;
+        @NotEmpty
         private String operation;
+        @NotEmpty
         private String permissionType;
     }
 }

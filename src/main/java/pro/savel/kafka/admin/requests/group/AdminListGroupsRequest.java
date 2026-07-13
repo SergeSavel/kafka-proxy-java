@@ -14,13 +14,16 @@
 
 package pro.savel.kafka.admin.requests.group;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.Collection;
 
 @Data
 public class AdminListGroupsRequest implements AdminGroupRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
     private Collection<String> withTypes;
     private Collection<String> withProtocolTypes;

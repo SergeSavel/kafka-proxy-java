@@ -14,13 +14,17 @@
 
 package pro.savel.kafka.admin.requests.group;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.Collection;
 
 @Data
 public class AdminDeleteConsumerGroupsRequest implements AdminGroupRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private Collection<String> groupIds;
 }

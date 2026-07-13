@@ -23,6 +23,8 @@ repositories {
 dependencies {
     implementation("io.netty:netty-all:4.2.12.Final")
     implementation("org.apache.kafka:kafka-clients:4.1.2")
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+    implementation("org.hibernate.validator:hibernate-validator:9.1.2.Final")
     implementation("org.slf4j:slf4j-api:2.0.17")
     implementation(platform("org.apache.logging.log4j:log4j-bom:2.25.4"))
     runtimeOnly("org.apache.logging.log4j:log4j-core")

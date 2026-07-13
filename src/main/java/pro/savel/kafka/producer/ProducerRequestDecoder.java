@@ -22,6 +22,8 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.util.ReferenceCountUtil;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.HttpUtils;
@@ -42,9 +44,11 @@ public class ProducerRequestDecoder extends ChannelInboundHandlerAdapter {
     public static final String URI_PREFIX = "/producer";
 
     private final ObjectMapper objectMapper;
+    private final Validator validator;
 
-    public ProducerRequestDecoder(ObjectMapper objectMapper) {
+    public ProducerRequestDecoder(ObjectMapper objectMapper, ValidatorFactory validatorFactory) {
         this.objectMapper = objectMapper;
+        this.validator = validatorFactory == null ? null : validatorFactory.getValidator();
     }
 
     @Override
@@ -96,7 +100,7 @@ public class ProducerRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeCreate(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, ProducerCreateRequest.class);
+            decodeRequest(ctx, httpRequest, ProducerCreateRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -104,7 +108,7 @@ public class ProducerRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeRemove(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, ProducerRemoveRequest.class);
+            decodeRequest(ctx, httpRequest, ProducerRemoveRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -112,7 +116,7 @@ public class ProducerRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeTouch(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST) {
-            decodeJsonRequest(ctx, httpRequest, ProducerTouchRequest.class);
+            decodeRequest(ctx, httpRequest, ProducerTouchRequest.class);
         } else {
             throw new MethodNotAllowedException("Unsupported HTTP method.");
         }
@@ -128,7 +132,7 @@ public class ProducerRequestDecoder extends ChannelInboundHandlerAdapter {
 
     private void decodeGetPartitions(ChannelHandlerContext ctx, FullHttpRequest httpRequest) throws BadRequestException, MethodNotAllowedException {
         if (httpRequest.method() == HttpMethod.POST)
-            decodeJsonRequest(ctx, httpRequest, ProducerGetPartitionsRequest.class);
+            decodeRequest(ctx, httpRequest, ProducerGetPartitionsRequest.class);
         else
             throw new MethodNotAllowedException("Unsupported HTTP method.");
     }
@@ -149,16 +153,30 @@ public class ProducerRequestDecoder extends ChannelInboundHandlerAdapter {
             request = ProducerRequestDeserializer.deserializeBinarySend(httpRequest.content());
         } else
             throw new BadRequestException("Invalid Content-Type header in request.");
+        if (validator != null) {
+            var violations = validator.validate(request);
+            if (!violations.isEmpty()) {
+                HttpUtils.writeBadRequestAndClose(ctx, httpRequest.protocolVersion(), Utils.combineConstraintViolationMessage(violations));
+                return;
+            }
+        }
         passBearer(ctx, httpRequest, request);
     }
 
-    private <T extends ProducerRequest> void decodeJsonRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest, Class<T> clazz) throws BadRequestException {
+    private <T extends ProducerRequest> void decodeRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest, Class<T> clazz) throws BadRequestException {
         var contentType = HttpUtils.getContentType(httpRequest);
         T request;
         if (HttpUtils.isJson(contentType))
             request = JsonUtils.parseJson(objectMapper, httpRequest.content(), clazz);
         else
             throw new BadRequestException("Invalid Content-Type header in request.");
+        if (validator != null) {
+            var violations = validator.validate(request);
+            if (!violations.isEmpty()) {
+                HttpUtils.writeBadRequestAndClose(ctx, httpRequest.protocolVersion(), Utils.combineConstraintViolationMessage(violations));
+                return;
+            }
+        }
         passBearer(ctx, httpRequest, request);
     }
 }

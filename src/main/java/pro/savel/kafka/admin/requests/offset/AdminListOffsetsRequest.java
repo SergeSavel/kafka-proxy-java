@@ -14,6 +14,7 @@
 
 package pro.savel.kafka.admin.requests.offset;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import pro.savel.kafka.common.contract.TopicPartition;
 
@@ -21,8 +22,11 @@ import java.util.Collection;
 
 @Data
 public abstract class AdminListOffsetsRequest implements AdminOffsetRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
+    @NotEmpty
     private Collection<TopicPartition> partitions;
     private String isolationLevel;
 }

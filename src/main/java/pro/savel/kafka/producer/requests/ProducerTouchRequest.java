@@ -14,10 +14,13 @@
 
 package pro.savel.kafka.producer.requests;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class ProducerTouchRequest implements ProducerRequest {
+    @NotEmpty
     private String producerId;
+    @NotEmpty
     private String token;
 }

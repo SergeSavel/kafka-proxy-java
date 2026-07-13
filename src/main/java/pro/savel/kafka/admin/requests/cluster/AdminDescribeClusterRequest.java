@@ -14,10 +14,13 @@
 
 package pro.savel.kafka.admin.requests.cluster;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class AdminDescribeClusterRequest implements AdminClusterRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
 }

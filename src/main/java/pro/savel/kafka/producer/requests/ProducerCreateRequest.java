@@ -14,13 +14,18 @@
 
 package pro.savel.kafka.producer.requests;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.util.Properties;
 
 @Data
 public class ProducerCreateRequest implements ProducerRequest {
+    @NotEmpty
     private String name;
+    @NotEmpty
     private Properties config;
+    @Positive
     private int expirationTimeout;
 }

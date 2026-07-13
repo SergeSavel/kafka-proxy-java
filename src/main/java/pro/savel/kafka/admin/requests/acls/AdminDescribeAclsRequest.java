@@ -14,12 +14,15 @@
 
 package pro.savel.kafka.admin.requests.acls;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import pro.savel.kafka.admin.data.AdminAclBindingFilter;
 
 @Data
 public class AdminDescribeAclsRequest implements AdminAclsRequest {
+    @NotEmpty
     private String adminId;
+    @NotEmpty
     private String token;
     private AdminAclBindingFilter filter;
 }
