@@ -318,8 +318,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         wrapper.touch();
         var admin = wrapper.getAdmin();
         var options = new DescribeTopicsOptions();
-        if (request.getIncludeAuthorizedOperations() != null)
-            options = options.includeAuthorizedOperations(request.getIncludeAuthorizedOperations());
+        var includeAuthorizedOperations = request.getIncludeAuthorizedOperations();
+        if (includeAuthorizedOperations != null)
+            options = options.includeAuthorizedOperations(includeAuthorizedOperations);
         TopicCollection topicCollection;
         if (request.getTopicId() != null)
             topicCollection = TopicCollection.ofTopicIds(Collections.singleton(request.getTopicId()));
