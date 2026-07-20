@@ -43,6 +43,7 @@ distributions {
     main {
         contents {
             from("LICENSE")
+            from("NOTICE")
             from("kafka-proxy.service")
         }
     }

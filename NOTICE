@@ -1,0 +1,13 @@
+Kafka HTTP-proxy (Java, netty)
+Copyright (c) 2019-2026 Serge Savel
+
+This product is a Java/netty application that enables sending and
+receiving Apache Kafka messages over HTTP. It is licensed under the Apache
+License, Version 2.0.
+
+Use, reproduction and distribution of this application are permitted in
+accordance with the terms of the Apache License, Version 2.0
+(see the LICENSE file or http://www.apache.org/licenses/LICENSE-2.0).
+
+This attribution notice must be preserved in all distributions and derivative
+works based on this application.
