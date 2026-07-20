@@ -46,10 +46,13 @@ import pro.savel.kafka.admin.requests.scram.AdminUpsertUserScramCredentialsReque
 import pro.savel.kafka.admin.requests.topic.*;
 import pro.savel.kafka.admin.responses.*;
 import pro.savel.kafka.common.*;
+import pro.savel.kafka.common.exceptions.BadRequestException;
 
 import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 @ChannelHandler.Sharable
@@ -284,10 +287,23 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
         wrapper.touch();
         var admin = wrapper.getAdmin();
-        var topicsResult = admin.listTopics();
+        var options = new ListTopicsOptions();
+        var includeInternal = request.getIncludeInternal();
+        if (includeInternal != null)
+            options.listInternal(includeInternal);
+        var topicsResult = admin.listTopics(options);
         topicsResult.listings().whenComplete((listings, error) -> {
             if (error == null) {
-                var response = AdminResponseMapper.mapListTopicsResponse(listings);
+                if (request.getPattern() != null) {
+                    Pattern pattern;
+                    try {
+                        pattern = Pattern.compile(request.getPattern());
+                    } catch (PatternSyntaxException e) {
+                        throw new BadRequestException("Invalid pattern.", e);
+                    }
+                    listings.removeIf(topicListing -> !pattern.matcher(topicListing.name()).matches());
+                }
+                var response = AdminListTopicsResponse.of(listings);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get topic listings.", error);

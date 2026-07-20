@@ -23,4 +23,6 @@ public class AdminListTopicsRequest implements AdminTopicRequest {
     private String adminId;
     @NotEmpty
     private String token;
+    private Boolean includeInternal;
+    private String pattern;
 }

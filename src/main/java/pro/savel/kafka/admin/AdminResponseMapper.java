@@ -61,24 +61,6 @@ public class AdminResponseMapper {
         return result;
     }
 
-    public static AdminListTopicsResponse mapListTopicsResponse(Collection<TopicListing> source) {
-        if (source == null)
-            return null;
-        var result = new AdminListTopicsResponse(source.size());
-        source.forEach(listing -> result.add(mapTopicInfo(listing)));
-        return result;
-    }
-
-    private static AdminListTopicsResponse.TopicInfo mapTopicInfo(TopicListing source) {
-        if (source == null)
-            return null;
-        var result = new AdminListTopicsResponse.TopicInfo();
-        result.setId(source.topicId().toString());
-        result.setName(source.name());
-        result.setInternal(source.isInternal());
-        return result;
-    }
-
     public static Set<String> mapAclOperations(Set<AclOperation> source) {
         if (source == null)
             return null;

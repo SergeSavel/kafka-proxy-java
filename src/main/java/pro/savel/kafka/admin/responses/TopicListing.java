@@ -1,4 +1,4 @@
-// Copyright 2025 Sergey Savelev (serge@savel.pro)
+// Copyright 2026 Sergey Savelev (serge@savel.pro)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,26 @@
 
 package pro.savel.kafka.admin.responses;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import lombok.Getter;
+import org.apache.kafka.common.Uuid;
 
-public class AdminListTopicsResponse extends ArrayList<TopicListing> implements AdminResponse {
+@Getter
+public class TopicListing {
 
-    private AdminListTopicsResponse(int initialCapacity) {
-        super(initialCapacity);
+    private Uuid id;
+    private String name;
+    private boolean isInternal;
+
+    private TopicListing() {
     }
 
-    public static AdminListTopicsResponse of(Collection<org.apache.kafka.clients.admin.TopicListing> source) {
+    public static TopicListing of(org.apache.kafka.clients.admin.TopicListing source) {
         if (source == null)
             return null;
-        AdminListTopicsResponse result = new AdminListTopicsResponse(source.size());
-        source.forEach(topicListingSource -> result.add(TopicListing.of(topicListingSource)));
+        TopicListing result = new TopicListing();
+        result.id = source.topicId();
+        result.name = source.name();
+        result.isInternal = source.isInternal();
         return result;
     }
 }
