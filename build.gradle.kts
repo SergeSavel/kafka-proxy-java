@@ -21,7 +21,11 @@ repositories {
 }
 
 dependencies {
-    implementation("io.netty:netty-all:4.2.15.Final")
+    implementation(platform("io.netty:netty-bom:4.2.15.Final"))
+    implementation("io.netty:netty-common")
+    implementation("io.netty:netty-buffer")
+    implementation("io.netty:netty-transport")
+    implementation("io.netty:netty-codec-http")
     implementation("org.apache.kafka:kafka-clients:4.1.2")
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
     implementation("org.hibernate.validator:hibernate-validator:9.1.2.Final")
