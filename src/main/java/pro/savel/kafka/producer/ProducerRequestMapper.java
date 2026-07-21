@@ -24,15 +24,18 @@ public class ProducerRequestMapper {
 
     public static ProducerSendRequest mapProduceRequest(ProducerSendStringRequest stringRequest) {
 
-        var headers = new HashMap<String, byte[]>(stringRequest.getHeaders().size());
-        stringRequest.getHeaders().forEach((key, value) -> headers.put(key, value.getBytes(StandardCharsets.UTF_8)));
-
         var request = new ProducerSendRequest();
         request.setProducerId(stringRequest.getProducerId());
         request.setToken(stringRequest.getToken());
         request.setTopic(stringRequest.getTopic());
         request.setPartition(stringRequest.getPartition());
-        request.setHeaders(headers);
+
+        var headersSource = stringRequest.getHeaders();
+        if (headersSource != null) {
+            var headers = new HashMap<String, byte[]>(stringRequest.getHeaders().size());
+            headersSource.forEach((key, value) -> headers.put(key, value.getBytes(StandardCharsets.UTF_8)));
+            request.setHeaders(headers);
+        }
 
         var keySource = stringRequest.getKey();
         if (keySource != null)

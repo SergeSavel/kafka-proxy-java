@@ -148,7 +148,9 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
         }
         var producer = wrapper.getProducer();
         var record = new ProducerRecord<>(request.getTopic(), request.getPartition(), request.getKey(), request.getValue());
-        request.getHeaders().forEach((key, value) -> record.headers().add(key, value));
+        var headers = request.getHeaders();
+        if (headers != null)
+            headers.forEach((key, value) -> record.headers().add(key, value));
         producer.send(record, callback);
     }
 
