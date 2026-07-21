@@ -23,11 +23,11 @@ public class AdminListConsumerGroupOffsetsResponse extends ArrayList<TopicPartit
         super(initialCapacity);
     }
 
-    public static AdminListConsumerGroupOffsetsResponse map(Map<org.apache.kafka.common.TopicPartition, org.apache.kafka.clients.consumer.OffsetAndMetadata> source) {
+    public static AdminListConsumerGroupOffsetsResponse of(Map<org.apache.kafka.common.TopicPartition, org.apache.kafka.clients.consumer.OffsetAndMetadata> source) {
         if (source == null)
             return null;
         var result = new AdminListConsumerGroupOffsetsResponse(source.size());
-        source.forEach((topicPartition, offsetAndMetadata) -> result.add(TopicPartitionOffsetMetadata.map(topicPartition, offsetAndMetadata)));
+        source.forEach((topicPartition, offsetAndMetadata) -> result.add(TopicPartitionOffsetMetadata.of(topicPartition, offsetAndMetadata)));
         return result;
     }
 }

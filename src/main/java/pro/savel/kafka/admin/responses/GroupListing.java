@@ -31,7 +31,7 @@ public class GroupListing {
     private GroupListing() {
     }
 
-    public static GroupListing map(org.apache.kafka.clients.admin.GroupListing source) {
+    public static GroupListing of(org.apache.kafka.clients.admin.GroupListing source) {
         if (source == null)
             return null;
         var result = new GroupListing();

@@ -35,12 +35,12 @@ public class AdminDescribeShareGroupResponse implements AdminResponse {
     private AdminDescribeShareGroupResponse() {
     }
 
-    public static AdminDescribeShareGroupResponse map(org.apache.kafka.clients.admin.ShareGroupDescription source) {
+    public static AdminDescribeShareGroupResponse of(org.apache.kafka.clients.admin.ShareGroupDescription source) {
         if (source == null)
             return null;
         var result = new AdminDescribeShareGroupResponse();
         result.groupId = source.groupId();
-        result.members = ShareGroupMemberDescription.map(source.members());
+        result.members = ShareGroupMemberDescription.of(source.members());
         result.groupState = AdminResponseMapper.mapGroupState(source.groupState());
         result.coordinator = CommonResponseMapper.mapNode(source.coordinator());
         result.groupEpoch = source.groupEpoch();

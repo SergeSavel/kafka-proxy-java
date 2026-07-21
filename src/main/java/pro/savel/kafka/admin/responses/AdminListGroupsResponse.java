@@ -23,11 +23,11 @@ public class AdminListGroupsResponse extends ArrayList<GroupListing> implements 
         super(initialCapacity);
     }
 
-    public static AdminListGroupsResponse map(Collection<org.apache.kafka.clients.admin.GroupListing> source) {
+    public static AdminListGroupsResponse of(Collection<org.apache.kafka.clients.admin.GroupListing> source) {
         if (source == null)
             return null;
         var result = new AdminListGroupsResponse(source.size());
-        source.forEach(item -> result.add(GroupListing.map(item)));
+        source.forEach(item -> result.add(GroupListing.of(item)));
         return result;
     }
 }

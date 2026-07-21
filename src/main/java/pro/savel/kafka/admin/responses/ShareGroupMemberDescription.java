@@ -33,15 +33,15 @@ public class ShareGroupMemberDescription {
     private ShareGroupMemberDescription() {
     }
 
-    public static Collection<ShareGroupMemberDescription> map(Collection<org.apache.kafka.clients.admin.ShareMemberDescription> source) {
+    public static Collection<ShareGroupMemberDescription> of(Collection<org.apache.kafka.clients.admin.ShareMemberDescription> source) {
         if (source == null)
             return null;
         var result = new ArrayList<ShareGroupMemberDescription>(source.size());
-        source.forEach(memberDescription -> result.add(map(memberDescription)));
+        source.forEach(memberDescription -> result.add(of(memberDescription)));
         return result;
     }
 
-    public static ShareGroupMemberDescription map(org.apache.kafka.clients.admin.ShareMemberDescription source) {
+    public static ShareGroupMemberDescription of(org.apache.kafka.clients.admin.ShareMemberDescription source) {
         if (source == null)
             return null;
         var result = new ShareGroupMemberDescription();

@@ -23,11 +23,11 @@ public class AdminListOffsetsResponse extends ArrayList<OffsetListing> implement
         super(initialCapacity);
     }
 
-    public static AdminListOffsetsResponse map(Map<org.apache.kafka.common.TopicPartition, org.apache.kafka.clients.admin.ListOffsetsResult.ListOffsetsResultInfo> source) {
+    public static AdminListOffsetsResponse of(Map<org.apache.kafka.common.TopicPartition, org.apache.kafka.clients.admin.ListOffsetsResult.ListOffsetsResultInfo> source) {
         if (source == null)
             return null;
         var result = new AdminListOffsetsResponse(source.size());
-        source.forEach((topicPartition, info) -> result.add(OffsetListing.map(topicPartition, info)));
+        source.forEach((topicPartition, info) -> result.add(OffsetListing.of(topicPartition, info)));
         return result;
     }
 }

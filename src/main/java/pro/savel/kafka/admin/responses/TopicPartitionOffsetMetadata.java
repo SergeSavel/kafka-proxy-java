@@ -28,7 +28,7 @@ public class TopicPartitionOffsetMetadata {
     private TopicPartitionOffsetMetadata() {
     }
 
-    public static TopicPartitionOffsetMetadata map(org.apache.kafka.common.TopicPartition topicPartition, org.apache.kafka.clients.consumer.OffsetAndMetadata offsetMetadata) {
+    public static TopicPartitionOffsetMetadata of(org.apache.kafka.common.TopicPartition topicPartition, org.apache.kafka.clients.consumer.OffsetAndMetadata offsetMetadata) {
         if (topicPartition == null && offsetMetadata == null)
             return null;
         var result = new TopicPartitionOffsetMetadata();

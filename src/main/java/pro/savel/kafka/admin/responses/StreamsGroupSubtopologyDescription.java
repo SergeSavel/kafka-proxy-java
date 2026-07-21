@@ -44,15 +44,15 @@ public class StreamsGroupSubtopologyDescription {
     private StreamsGroupSubtopologyDescription() {
     }
 
-    public static Collection<StreamsGroupSubtopologyDescription> map(Collection<org.apache.kafka.clients.admin.StreamsGroupSubtopologyDescription> source) {
+    public static Collection<StreamsGroupSubtopologyDescription> of(Collection<org.apache.kafka.clients.admin.StreamsGroupSubtopologyDescription> source) {
         if (source == null)
             return null;
         var result = new ArrayList<StreamsGroupSubtopologyDescription>(source.size());
-        source.forEach(item -> result.add(map(item)));
+        source.forEach(item -> result.add(of(item)));
         return result;
     }
 
-    public static StreamsGroupSubtopologyDescription map(org.apache.kafka.clients.admin.StreamsGroupSubtopologyDescription source) {
+    public static StreamsGroupSubtopologyDescription of(org.apache.kafka.clients.admin.StreamsGroupSubtopologyDescription source) {
         if (source == null)
             return null;
         var result = new StreamsGroupSubtopologyDescription();

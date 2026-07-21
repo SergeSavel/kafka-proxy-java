@@ -28,7 +28,7 @@ public class OffsetListing {
     private OffsetListing() {
     }
 
-    public static OffsetListing map(org.apache.kafka.common.TopicPartition topicPartition, org.apache.kafka.clients.admin.ListOffsetsResult.ListOffsetsResultInfo info) {
+    public static OffsetListing of(org.apache.kafka.common.TopicPartition topicPartition, org.apache.kafka.clients.admin.ListOffsetsResult.ListOffsetsResultInfo info) {
         if (topicPartition == null || info == null)
             return null;
         var result = new OffsetListing();

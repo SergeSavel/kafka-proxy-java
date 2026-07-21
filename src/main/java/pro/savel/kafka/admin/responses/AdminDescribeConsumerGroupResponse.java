@@ -38,13 +38,13 @@ public class AdminDescribeConsumerGroupResponse implements AdminResponse {
     private AdminDescribeConsumerGroupResponse() {
     }
 
-    public static AdminDescribeConsumerGroupResponse map(org.apache.kafka.clients.admin.ConsumerGroupDescription source) {
+    public static AdminDescribeConsumerGroupResponse of(org.apache.kafka.clients.admin.ConsumerGroupDescription source) {
         if (source == null)
             return null;
         var result = new AdminDescribeConsumerGroupResponse();
         result.groupId = source.groupId();
         result.isSimpleConsumerGroup = source.isSimpleConsumerGroup();
-        result.members = GroupMemberDescription.map(source.members());
+        result.members = GroupMemberDescription.of(source.members());
         result.partitionAssignor = source.partitionAssignor();
         result.type = AdminResponseMapper.mapGroupType(source.type());
         result.groupState = AdminResponseMapper.mapGroupState(source.groupState());

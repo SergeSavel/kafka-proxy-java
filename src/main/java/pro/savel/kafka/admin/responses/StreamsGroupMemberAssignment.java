@@ -39,15 +39,15 @@ public class StreamsGroupMemberAssignment {
     private StreamsGroupMemberAssignment() {
     }
 
-    public static Collection<StreamsGroupMemberAssignment> map(Collection<org.apache.kafka.clients.admin.StreamsGroupMemberAssignment> source) {
+    public static Collection<StreamsGroupMemberAssignment> of(Collection<org.apache.kafka.clients.admin.StreamsGroupMemberAssignment> source) {
         if (source == null)
             return null;
         var result = new ArrayList<StreamsGroupMemberAssignment>(source.size());
-        source.forEach(item -> result.add(map(item)));
+        source.forEach(item -> result.add(of(item)));
         return result;
     }
 
-    public static StreamsGroupMemberAssignment map(org.apache.kafka.clients.admin.StreamsGroupMemberAssignment source) {
+    public static StreamsGroupMemberAssignment of(org.apache.kafka.clients.admin.StreamsGroupMemberAssignment source) {
         if (source == null)
             return null;
         var result = new StreamsGroupMemberAssignment();

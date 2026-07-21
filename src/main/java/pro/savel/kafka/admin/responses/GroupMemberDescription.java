@@ -36,15 +36,15 @@ public class GroupMemberDescription {
     private GroupMemberDescription() {
     }
 
-    public static Collection<GroupMemberDescription> map(Collection<org.apache.kafka.clients.admin.MemberDescription> source) {
+    public static Collection<GroupMemberDescription> of(Collection<org.apache.kafka.clients.admin.MemberDescription> source) {
         if (source == null)
             return null;
         var result = new ArrayList<GroupMemberDescription>(source.size());
-        source.forEach(memberDescription -> result.add(map(memberDescription)));
+        source.forEach(memberDescription -> result.add(of(memberDescription)));
         return result;
     }
 
-    public static GroupMemberDescription map(org.apache.kafka.clients.admin.MemberDescription source) {
+    public static GroupMemberDescription of(org.apache.kafka.clients.admin.MemberDescription source) {
         if (source == null)
             return null;
         var result = new GroupMemberDescription();

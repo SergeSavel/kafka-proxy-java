@@ -36,14 +36,14 @@ public class AdminDescribeClassicGroupResponse implements AdminResponse {
     private AdminDescribeClassicGroupResponse() {
     }
 
-    public static AdminDescribeClassicGroupResponse map(org.apache.kafka.clients.admin.ClassicGroupDescription source) {
+    public static AdminDescribeClassicGroupResponse of(org.apache.kafka.clients.admin.ClassicGroupDescription source) {
         if (source == null)
             return null;
         var result = new AdminDescribeClassicGroupResponse();
         result.groupId = source.groupId();
         result.protocol = source.protocol();
         result.protocolData = source.protocolData();
-        result.members = GroupMemberDescription.map(source.members());
+        result.members = GroupMemberDescription.of(source.members());
         result.state = AdminResponseMapper.mapGroupState(source.state());
         result.coordinator = CommonResponseMapper.mapNode(source.coordinator());
         result.isSimpleConsumerGroup = source.isSimpleConsumerGroup();

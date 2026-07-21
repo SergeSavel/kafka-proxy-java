@@ -667,7 +667,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var listGroupsResult = admin.listGroups(options);
         listGroupsResult.all().whenComplete((groupListings, error) -> {
             if (error == null) {
-                var response = AdminListGroupsResponse.map(groupListings);
+                var response = AdminListGroupsResponse.of(groupListings);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to get group listings.", error);
@@ -693,7 +693,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     return;
                 }
                 for (var classicGroupDescription : classicGroupDescriptions.values()) {
-                    var response = AdminDescribeClassicGroupResponse.map(classicGroupDescription);
+                    var response = AdminDescribeClassicGroupResponse.of(classicGroupDescription);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
@@ -721,7 +721,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     return;
                 }
                 for (var consumerGroupDescription : consumerGroupDescriptions.values()) {
-                    var response = AdminDescribeConsumerGroupResponse.map(consumerGroupDescription);
+                    var response = AdminDescribeConsumerGroupResponse.of(consumerGroupDescription);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
@@ -749,7 +749,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     return;
                 }
                 for (var shareGroupDescription : shareGroupDescriptions.values()) {
-                    var response = AdminDescribeShareGroupResponse.map(shareGroupDescription);
+                    var response = AdminDescribeShareGroupResponse.of(shareGroupDescription);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
@@ -777,7 +777,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     return;
                 }
                 for (var streamsGroupDescription : streamsGroupDescriptions.values()) {
-                    var response = AdminDescribeStreamsGroupResponse.map(streamsGroupDescription);
+                    var response = AdminDescribeStreamsGroupResponse.of(streamsGroupDescription);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
@@ -805,7 +805,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                     return;
                 }
                 for (var consumerGroupOffsets : offsets.values()) {
-                    var response = AdminListConsumerGroupOffsetsResponse.map(consumerGroupOffsets);
+                    var response = AdminListConsumerGroupOffsetsResponse.of(consumerGroupOffsets);
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
                     break;
                 }
@@ -1039,7 +1039,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var listOffsetsResult = admin.listOffsets(topicPartitionOffsets, options);
         listOffsetsResult.all().whenComplete((offsets, error) -> {
             if (error == null) {
-                var response = AdminListOffsetsResponse.map(offsets);
+                var response = AdminListOffsetsResponse.of(offsets);
                 ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (!handleError(ctx, requestBearer, error)) {
                 logger.error("Unable to list offsets.", error);

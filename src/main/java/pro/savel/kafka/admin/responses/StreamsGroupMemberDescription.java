@@ -63,15 +63,15 @@ public class StreamsGroupMemberDescription {
     private StreamsGroupMemberDescription() {
     }
 
-    public static Collection<StreamsGroupMemberDescription> map(Collection<org.apache.kafka.clients.admin.StreamsGroupMemberDescription> source) {
+    public static Collection<StreamsGroupMemberDescription> of(Collection<org.apache.kafka.clients.admin.StreamsGroupMemberDescription> source) {
         if (source == null)
             return null;
         var result = new ArrayList<StreamsGroupMemberDescription>(source.size());
-        source.forEach(item -> result.add(map(item)));
+        source.forEach(item -> result.add(of(item)));
         return result;
     }
 
-    public static StreamsGroupMemberDescription map(org.apache.kafka.clients.admin.StreamsGroupMemberDescription source) {
+    public static StreamsGroupMemberDescription of(org.apache.kafka.clients.admin.StreamsGroupMemberDescription source) {
         if (source == null)
             return null;
         var result = new StreamsGroupMemberDescription();
@@ -87,8 +87,8 @@ public class StreamsGroupMemberDescription {
         result.clientTags = source.clientTags();
         result.taskOffsets = mapTaskOffsets(source.taskOffsets());
         result.taskEndOffsets = mapTaskOffsets(source.taskEndOffsets());
-        result.assignment = StreamsGroupMemberAssignment.map(source.assignment());
-        result.targetAssignment = StreamsGroupMemberAssignment.map(source.targetAssignment());
+        result.assignment = StreamsGroupMemberAssignment.of(source.assignment());
+        result.targetAssignment = StreamsGroupMemberAssignment.of(source.targetAssignment());
         result.isClassic = source.isClassic();
         return result;
     }

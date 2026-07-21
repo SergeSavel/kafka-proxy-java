@@ -39,7 +39,7 @@ public class AdminDescribeStreamsGroupResponse implements AdminResponse {
     private AdminDescribeStreamsGroupResponse() {
     }
 
-    public static AdminDescribeStreamsGroupResponse map(org.apache.kafka.clients.admin.StreamsGroupDescription source) {
+    public static AdminDescribeStreamsGroupResponse of(org.apache.kafka.clients.admin.StreamsGroupDescription source) {
         if (source == null)
             return null;
         var result = new AdminDescribeStreamsGroupResponse();
@@ -47,8 +47,8 @@ public class AdminDescribeStreamsGroupResponse implements AdminResponse {
         result.groupEpoch = source.groupEpoch();
         result.targetAssignmentEpoch = source.targetAssignmentEpoch();
         result.topologyEpoch = source.topologyEpoch();
-        result.subtopologies = StreamsGroupSubtopologyDescription.map(source.subtopologies());
-        result.members = StreamsGroupMemberDescription.map(source.members());
+        result.subtopologies = StreamsGroupSubtopologyDescription.of(source.subtopologies());
+        result.members = StreamsGroupMemberDescription.of(source.members());
         result.groupState = AdminResponseMapper.mapGroupState(source.groupState());
         result.coordinator = mapNode(source.coordinator());
         result.authorizedOperations = AdminResponseMapper.mapAclOperations(source.authorizedOperations());
