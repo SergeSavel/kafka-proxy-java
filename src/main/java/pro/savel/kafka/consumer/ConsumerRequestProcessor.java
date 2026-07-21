@@ -164,7 +164,7 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
     }
 
     private void processCommit(ChannelHandlerContext ctx, RequestBearer requestBearer) {
-        var request = (ConsumerPollRequest) requestBearer.request();
+        var request = (ConsumerCommitRequest) requestBearer.request();
         var wrapper = provider.getConsumer(request.getConsumerId(), request.getToken());
         wrapper.touch();
         var consumer = wrapper.getConsumer();
@@ -319,8 +319,6 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
         else if (error instanceof InvalidOffsetException e)
             HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), Utils.combineErrorMessage(e));
         else if (!CommonErrors.handle(ctx, requestBearer, error))
-            handled = false;
-        else
             handled = false;
         return handled;
     }
