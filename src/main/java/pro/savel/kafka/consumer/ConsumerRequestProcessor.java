@@ -316,15 +316,49 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 //endregion
 
     private void execute(ChannelHandlerContext ctx, RequestBearer requestBearer, Supplier<ConsumerResponseBearer> operation) {
-        CompletableFuture.supplyAsync(operation, executor)
-                .whenComplete((response, error) -> ctx.executor().execute(() -> {
-                    if (error == null) {
-                        ctx.writeAndFlush(response);
-                    } else if (!handleError(ctx, requestBearer, error)) {
-                        logger.error("An unexpected error occurred while processing consumer request.", error);
-                        HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), Utils.combineErrorMessage(error));
-                    }
-                }));
+        var taskReference = new AtomicReference<Future<?>>();
+        var closeFuture = ctx.channel().closeFuture();
+        ChannelFutureListener closeListener = ignored -> {
+            var task = taskReference.get();
+            if (task != null)
+                task.cancel(true);
+        };
+        closeFuture.addListener(closeListener);
+        try {
+            var task = executor.submit(() -> {
+                ConsumerResponseBearer response = null;
+                Throwable error = null;
+                try {
+                    response = operation.get();
+                } catch (Throwable e) {
+                    error = e;
+                } finally {
+                    closeFuture.removeListener(closeListener);
+                }
+                if (!ctx.channel().isActive())
+                    return;
+                var response_ = response;
+                var error_ = error;
+                try {
+                    ctx.executor().execute(() -> {
+                        if (error_ == null) {
+                            ctx.writeAndFlush(response_);
+                        } else if (!handleError(ctx, requestBearer, error_)) {
+                            logger.error("An unexpected error occurred while processing consumer request.", error_);
+                            HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), Utils.combineErrorMessage(error_));
+                        }
+                    });
+                } catch (RejectedExecutionException ignored) {
+                    logger.debug("Unable to deliver consumer response because the event loop has stopped.");
+                }
+            });
+            taskReference.set(task);
+            if (!ctx.channel().isActive())
+                task.cancel(true);
+        } catch (RuntimeException e) {
+            closeFuture.removeListener(closeListener);
+            throw e;
+        }
     }
 
     private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
