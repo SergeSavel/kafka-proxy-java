@@ -14,7 +14,9 @@
 
 package pro.savel.kafka.admin.requests.producer;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import pro.savel.kafka.common.contract.TopicPartition;
 
@@ -27,5 +29,5 @@ public class AdminDescribeProducersRequest implements AdminProducerRequest {
     @NotEmpty
     private String token;
     @NotEmpty
-    private Collection<TopicPartition> partitions;
+    private Collection<@NotNull @Valid TopicPartition> partitions;
 }

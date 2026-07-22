@@ -14,7 +14,9 @@
 
 package pro.savel.kafka.admin.requests.group;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
@@ -30,7 +32,7 @@ public class AdminAlterConsumerGroupOffsetsRequest implements AdminGroupRequest 
     @NotEmpty
     private String groupId;
     @NotEmpty
-    private Collection<TopicPartitionOffsetMetadata> offsets;
+    private Collection<@NotNull @Valid TopicPartitionOffsetMetadata> offsets;
 
     @Data
     public static class TopicPartitionOffsetMetadata {

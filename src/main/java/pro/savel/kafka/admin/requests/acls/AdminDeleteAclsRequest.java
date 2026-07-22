@@ -14,7 +14,9 @@
 
 package pro.savel.kafka.admin.requests.acls;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import pro.savel.kafka.admin.data.AdminAclBindingFilter;
 
@@ -27,5 +29,5 @@ public class AdminDeleteAclsRequest implements AdminAclsRequest {
     @NotEmpty
     private String token;
     @NotEmpty
-    private Collection<AdminAclBindingFilter> filters;
+    private Collection<@NotNull @Valid AdminAclBindingFilter> filters;
 }

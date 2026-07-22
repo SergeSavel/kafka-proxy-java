@@ -14,7 +14,9 @@
 
 package pro.savel.kafka.consumer.requests;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import pro.savel.kafka.common.contract.TopicPartition;
 
@@ -27,5 +29,5 @@ public class ConsumerGetEndOffsetsRequest implements ConsumerRequest {
     @NotEmpty
     private String token;
     @NotEmpty
-    private Collection<TopicPartition> partitions;
+    private Collection<@NotNull @Valid TopicPartition> partitions;
 }
