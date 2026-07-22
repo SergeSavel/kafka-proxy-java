@@ -27,8 +27,6 @@ import org.slf4j.LoggerFactory;
 import pro.savel.kafka.common.*;
 import pro.savel.kafka.producer.requests.*;
 
-import java.util.concurrent.CompletionException;
-
 @ChannelHandler.Sharable
 public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter implements AutoCloseable {
 
@@ -169,7 +167,9 @@ public class ProducerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
         var handled = true;
-        if (error instanceof CompletionException)
+        if (error instanceof java.util.concurrent.CompletionException && error.getCause() != null)
+            handled = handleError(ctx, requestBearer, error.getCause());
+        else if (error instanceof org.apache.kafka.common.errors.TimeoutException && error.getCause() != null)
             handled = handleError(ctx, requestBearer, error.getCause());
         else if (!CommonErrors.handle(ctx, requestBearer, error))
             handled = false;

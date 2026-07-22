@@ -49,7 +49,6 @@ import pro.savel.kafka.common.*;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 
 import java.util.*;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -1052,7 +1051,9 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
 
     private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
         var handled = true;
-        if (error instanceof CompletionException)
+        if (error instanceof java.util.concurrent.CompletionException && error.getCause() != null)
+            handled = handleError(ctx, requestBearer, error.getCause());
+        else if (error instanceof org.apache.kafka.common.errors.TimeoutException && error.getCause() != null)
             handled = handleError(ctx, requestBearer, error.getCause());
         else if (!CommonErrors.handle(ctx, requestBearer, error))
             handled = false;

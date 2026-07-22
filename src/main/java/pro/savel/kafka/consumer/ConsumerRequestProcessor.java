@@ -14,6 +14,7 @@
 
 package pro.savel.kafka.consumer;
 
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -30,6 +31,7 @@ import pro.savel.kafka.consumer.requests.*;
 
 import java.time.Duration;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -327,7 +329,9 @@ public class ConsumerRequestProcessor extends ChannelInboundHandlerAdapter imple
 
     private static boolean handleError(ChannelHandlerContext ctx, RequestBearer requestBearer, Throwable error) {
         var handled = true;
-        if (error instanceof CompletionException)
+        if (error instanceof java.util.concurrent.CompletionException && error.getCause() != null)
+            handled = handleError(ctx, requestBearer, error.getCause());
+        else if (error instanceof org.apache.kafka.common.errors.TimeoutException && error.getCause() != null)
             handled = handleError(ctx, requestBearer, error.getCause());
         else if (error instanceof InvalidOffsetException e)
             HttpUtils.writeConflictAndClose(ctx, requestBearer.protocolVersion(), Utils.combineErrorMessage(e));
