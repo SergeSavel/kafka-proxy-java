@@ -48,8 +48,8 @@ public class PartitionInfo {
         result.leader = Node.of(source.leader());
         result.replicas = Node.of(source.replicas());
         result.isr = mapReplicaIds(source.isr());
-        result.elr = mapReplicaIds(source.isr());
-        result.lastKnownElr = mapReplicaIds(source.isr());
+        result.elr = mapReplicaIds(source.elr());
+        result.lastKnownElr = mapReplicaIds(source.lastKnownElr());
         return result;
     }
 
