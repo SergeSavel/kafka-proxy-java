@@ -33,6 +33,6 @@ public abstract class CommonRequestMapper {
     public static TopicPartition mapTopicPartition(pro.savel.kafka.common.contract.TopicPartition source) {
         if (source == null)
             return null;
-        return new TopicPartition(source.topic(), source.partition());
+        return new TopicPartition(source.getTopic(), source.getPartition());
     }
 }

@@ -16,7 +16,6 @@ package pro.savel.kafka.admin.responses;
 
 import lombok.Getter;
 import pro.savel.kafka.admin.AdminResponseMapper;
-import pro.savel.kafka.common.CommonResponseMapper;
 import pro.savel.kafka.common.contract.Node;
 
 import java.util.Collection;
@@ -45,7 +44,7 @@ public class AdminDescribeClassicGroupResponse implements AdminResponse {
         result.protocolData = source.protocolData();
         result.members = GroupMemberDescription.of(source.members());
         result.state = AdminResponseMapper.mapGroupState(source.state());
-        result.coordinator = CommonResponseMapper.mapNode(source.coordinator());
+        result.coordinator = Node.of(source.coordinator());
         result.isSimpleConsumerGroup = source.isSimpleConsumerGroup();
         result.authorizedOperations = AdminResponseMapper.mapAclOperations(source.authorizedOperations());
         return result;

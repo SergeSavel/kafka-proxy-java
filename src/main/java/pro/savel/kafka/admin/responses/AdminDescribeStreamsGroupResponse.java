@@ -21,8 +21,6 @@ import pro.savel.kafka.common.contract.Node;
 
 import java.util.Collection;
 
-import static pro.savel.kafka.common.CommonResponseMapper.mapNode;
-
 @Getter
 public class AdminDescribeStreamsGroupResponse implements AdminResponse {
 
@@ -50,7 +48,7 @@ public class AdminDescribeStreamsGroupResponse implements AdminResponse {
         result.subtopologies = StreamsGroupSubtopologyDescription.of(source.subtopologies());
         result.members = StreamsGroupMemberDescription.of(source.members());
         result.groupState = AdminResponseMapper.mapGroupState(source.groupState());
-        result.coordinator = mapNode(source.coordinator());
+        result.coordinator = Node.of(source.coordinator());
         result.authorizedOperations = AdminResponseMapper.mapAclOperations(source.authorizedOperations());
         return result;
     }

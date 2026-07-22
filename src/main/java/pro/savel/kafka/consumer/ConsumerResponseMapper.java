@@ -18,11 +18,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
+import pro.savel.kafka.common.contract.TopicPartition;
 import pro.savel.kafka.consumer.responses.*;
 
 import java.util.*;
-
-import static pro.savel.kafka.common.CommonResponseMapper.mapTopicPartition;
 
 public class ConsumerResponseMapper {
 
@@ -98,7 +97,7 @@ public class ConsumerResponseMapper {
         if (source == null)
             return null;
         var result = new ConsumerAssignmentResponse(source.size());
-        source.forEach(partition -> result.add(mapTopicPartition(partition)));
+        source.forEach(partition -> result.add(TopicPartition.of(partition)));
         return result;
     }
 

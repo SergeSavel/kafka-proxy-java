@@ -16,6 +16,34 @@ package pro.savel.kafka.common.contract;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.PositiveOrZero;
+import lombok.Getter;
 
-public record TopicPartition(@NotEmpty String topic, @PositiveOrZero int partition) {
+import java.util.ArrayList;
+import java.util.Collection;
+
+@Getter
+public class TopicPartition {
+
+    private @NotEmpty String topic;
+    private @PositiveOrZero int partition;
+
+    private TopicPartition() {
+    }
+
+    public static Collection<TopicPartition> of(Collection<org.apache.kafka.common.TopicPartition> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<TopicPartition>(source.size());
+        source.forEach(partition -> result.add(of(partition)));
+        return result;
+    }
+
+    public static TopicPartition of(org.apache.kafka.common.TopicPartition source) {
+        if (source == null)
+            return null;
+        var result = new TopicPartition();
+        result.topic = source.topic();
+        result.partition = source.partition();
+        return result;
+    }
 }

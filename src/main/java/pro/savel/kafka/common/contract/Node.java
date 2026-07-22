@@ -14,12 +14,40 @@
 
 package pro.savel.kafka.common.contract;
 
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+import java.util.ArrayList;
+import java.util.Collection;
+
+@Getter
 public class Node {
+
     private int id;
     private String host;
     private int port;
     private String rack;
+    private boolean isFenced;
+
+    private Node() {
+    }
+
+    public static Collection<Node> of(Collection<org.apache.kafka.common.Node> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<Node>(source.size());
+        source.forEach(nodeSource -> result.add(of(nodeSource)));
+        return result;
+    }
+
+    public static Node of(org.apache.kafka.common.Node source) {
+        if (source == null || source.isEmpty())
+            return null;
+        var result = new Node();
+        result.id = source.id();
+        result.host = source.host();
+        result.port = source.port();
+        result.rack = source.rack();
+        result.isFenced = source.isFenced();
+        return result;
+    }
 }

@@ -14,15 +14,50 @@
 
 package pro.savel.kafka.common.contract;
 
-import lombok.Data;
+import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
-@Data
+@Getter
 public class PartitionInfo {
+
     private int partition;
     private Node leader;
     private Collection<Node> replicas;
-    private Collection<Node> isr;
-    private Collection<Node> elr;
+    private Collection<Integer> isr;
+    private Collection<Integer> elr;
+    private Collection<Integer> lastKnownElr;
+
+    private PartitionInfo() {
+    }
+
+    public static Collection<PartitionInfo> of(Collection<org.apache.kafka.common.TopicPartitionInfo> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<PartitionInfo>(source.size());
+        source.forEach(partitionInfoSource -> result.add(of(partitionInfoSource)));
+        return result;
+    }
+
+    public static PartitionInfo of(org.apache.kafka.common.TopicPartitionInfo source) {
+        if (source == null)
+            return null;
+        var result = new PartitionInfo();
+        result.partition = source.partition();
+        result.leader = Node.of(source.leader());
+        result.replicas = Node.of(source.replicas());
+        result.isr = mapReplicaIds(source.isr());
+        result.elr = mapReplicaIds(source.isr());
+        result.lastKnownElr = mapReplicaIds(source.isr());
+        return result;
+    }
+
+    private static Collection<Integer> mapReplicaIds(Collection<org.apache.kafka.common.Node> source) {
+        if (source == null)
+            return null;
+        var result = new ArrayList<Integer>(source.size());
+        source.forEach(node -> result.add(node == null || node.isEmpty() ? null : node.id()));
+        return result;
+    }
 }

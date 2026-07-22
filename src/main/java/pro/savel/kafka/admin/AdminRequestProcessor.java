@@ -20,7 +20,9 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.*;
+import org.apache.kafka.common.GroupState;
+import org.apache.kafka.common.GroupType;
+import org.apache.kafka.common.IsolationLevel;
 import org.apache.kafka.common.config.ConfigResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,7 @@ import pro.savel.kafka.admin.requests.scram.AdminUpsertUserScramCredentialsReque
 import pro.savel.kafka.admin.requests.topic.*;
 import pro.savel.kafka.admin.responses.*;
 import pro.savel.kafka.common.*;
+import pro.savel.kafka.common.contract.Node;
 import pro.savel.kafka.common.exceptions.BadRequestException;
 
 import java.util.*;
@@ -234,7 +237,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var errorCounter = new AtomicInteger(1);
         describeResult.nodes().whenComplete((nodesSource, error) -> {
             if (error == null) {
-                response.setNodes(CommonResponseMapper.mapNodes(nodesSource));
+                response.setNodes(Node.of(nodesSource));
                 if (successCounter.decrementAndGet() == 0)
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (errorCounter.decrementAndGet() == 0) {
@@ -252,7 +255,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         });
         describeResult.controller().whenComplete((controllerSource, error) -> {
             if (error == null) {
-                response.setController(CommonResponseMapper.mapNode(controllerSource));
+                response.setController(Node.of(controllerSource));
                 if (successCounter.decrementAndGet() == 0)
                     ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
             } else if (errorCounter.decrementAndGet() == 0) {
@@ -320,11 +323,11 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var includeAuthorizedOperations = request.getIncludeAuthorizedOperations();
         if (includeAuthorizedOperations != null)
             options = options.includeAuthorizedOperations(includeAuthorizedOperations);
-        TopicCollection topicCollection;
+        org.apache.kafka.common.TopicCollection topicCollection;
         if (request.getTopicId() != null)
-            topicCollection = TopicCollection.ofTopicIds(Collections.singleton(request.getTopicId()));
+            topicCollection = org.apache.kafka.common.TopicCollection.ofTopicIds(Collections.singleton(request.getTopicId()));
         else if (request.getTopicName() != null)
-            topicCollection = TopicCollection.ofTopicNames(Collections.singleton(request.getTopicName()));
+            topicCollection = org.apache.kafka.common.TopicCollection.ofTopicNames(Collections.singleton(request.getTopicName()));
         else
             throw new IllegalArgumentException("Topic name or id must be specified");
         var describeResult = admin.describeTopics(topicCollection, options);
@@ -1023,7 +1026,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         wrapper.touch();
         var admin = wrapper.getAdmin();
         var topicPartitionOffsets = request.getPartitions().stream()
-                .collect(Collectors.toMap(topicPartition -> new TopicPartition(topicPartition.topic(), topicPartition.partition()), topicPartition -> offsetSpec));
+                .collect(Collectors.toMap(CommonRequestMapper::mapTopicPartition, topicPartition -> offsetSpec));
         ListOffsetsOptions options;
         if (request.getIsolationLevel() != null)
             try {

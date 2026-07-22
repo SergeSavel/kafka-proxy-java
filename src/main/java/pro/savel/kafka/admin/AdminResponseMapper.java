@@ -26,7 +26,7 @@ import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import pro.savel.kafka.admin.data.AdminAclBinding;
 import pro.savel.kafka.admin.responses.*;
-import pro.savel.kafka.common.CommonResponseMapper;
+import pro.savel.kafka.common.contract.PartitionInfo;
 
 import java.util.*;
 
@@ -77,7 +77,7 @@ public class AdminResponseMapper {
         result.setName(source.name());
         result.setInternal(source.isInternal());
         result.setAuthorizedOperations(mapAclOperations(source.authorizedOperations()));
-        result.setPartitions(CommonResponseMapper.mapPartitionInfos(source.partitions()));
+        result.setPartitions(PartitionInfo.of(source.partitions()));
         return result;
     }
 
@@ -245,12 +245,12 @@ public class AdminResponseMapper {
     public static Collection<pro.savel.kafka.common.contract.TopicPartition> mapMemberAssignment(MemberAssignment source) {
         if (source == null)
             return null;
-        return CommonResponseMapper.mapTopicPartitions(source.topicPartitions());
+        return pro.savel.kafka.common.contract.TopicPartition.of(source.topicPartitions());
     }
 
     public static Collection<pro.savel.kafka.common.contract.TopicPartition> mapMemberAssignment(ShareMemberAssignment source) {
         if (source == null)
             return null;
-        return CommonResponseMapper.mapTopicPartitions(source.topicPartitions());
+        return pro.savel.kafka.common.contract.TopicPartition.of(source.topicPartitions());
     }
 }
