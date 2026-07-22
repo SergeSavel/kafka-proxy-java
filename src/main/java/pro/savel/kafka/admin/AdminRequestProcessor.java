@@ -1027,7 +1027,7 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
         var admin = wrapper.getAdmin();
         var topicPartitionOffsets = request.getPartitions().stream()
                 .collect(Collectors.toMap(CommonRequestMapper::mapTopicPartition, topicPartition -> offsetSpec));
-        ListOffsetsOptions options;
+        var options = new ListOffsetsOptions();
         if (request.getIsolationLevel() != null)
             try {
                 var isolationLevel = IsolationLevel.valueOf(request.getIsolationLevel());
@@ -1036,8 +1036,6 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
                 HttpUtils.writeBadRequestAndClose(ctx, requestBearer.protocolVersion(), e.getMessage());
                 return;
             }
-        else
-            options = new ListOffsetsOptions();
         var listOffsetsResult = admin.listOffsets(topicPartitionOffsets, options);
         listOffsetsResult.all().whenComplete((offsets, error) -> {
             if (error == null) {
