@@ -31,6 +31,7 @@ import pro.savel.kafka.admin.requests.acls.AdminCreateAclsRequest;
 import pro.savel.kafka.admin.requests.acls.AdminDeleteAclsRequest;
 import pro.savel.kafka.admin.requests.acls.AdminDescribeAclsRequest;
 import pro.savel.kafka.admin.requests.cluster.AdminDescribeClusterRequest;
+import pro.savel.kafka.admin.requests.cluster.AdminDescribeLogDirsRequest;
 import pro.savel.kafka.admin.requests.config.AdminDeleteTopicConfigRequest;
 import pro.savel.kafka.admin.requests.config.AdminDescribeBrokerConfigsRequest;
 import pro.savel.kafka.admin.requests.config.AdminDescribeTopicConfigsRequest;
@@ -115,6 +116,8 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             processDescribeBrokerConfigs(ctx, requestBearer);
         else if (requestClass == AdminDescribeClusterRequest.class)
             processDescribeCluster(ctx, requestBearer);
+        else if (requestClass == AdminDescribeLogDirsRequest.class)
+            processDescribeLogDirs(ctx, requestBearer);
         else if (requestClass == AdminCreateRequest.class)
             processCreate(ctx, requestBearer);
         else if (requestClass == AdminRemoveRequest.class)
@@ -278,6 +281,24 @@ public class AdminRequestProcessor extends ChannelInboundHandlerAdapter implemen
             logger.error("Unable to get cluster description.", error);
             HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
         }
+    }
+
+    private void processDescribeLogDirs(ChannelHandlerContext ctx, RequestBearer requestBearer) {
+        var request = (AdminDescribeLogDirsRequest) requestBearer.request();
+        var wrapper = provider.getAdmin(request.getAdminId(), request.getToken());
+        wrapper.touch();
+        var admin = wrapper.getAdmin();
+        var brokers = request.getBrokerIds();
+        var describeResult = admin.describeLogDirs(brokers);
+        describeResult.allDescriptions().whenComplete((descriptions, error) -> {
+            if (error == null) {
+                var response = AdminDescribeLogDirsResponse.of(descriptions);
+                ctx.writeAndFlush(new AdminResponseBearer(requestBearer, HttpResponseStatus.OK, response));
+            } else if (!handleError(ctx, requestBearer, error)) {
+                logger.error("Unable to get topic description.", error);
+                HttpUtils.writeInternalServerErrorAndClose(ctx, requestBearer.protocolVersion(), error.getMessage());
+            }
+        });
     }
 
 //endregion
